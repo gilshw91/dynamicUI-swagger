@@ -14,12 +14,6 @@ const CreateComponents = ({ specsJson }) => {
   let tableData = [];
   let displayFiltersArray = [];
 
-  React.useEffect(
-    () => setDisplayFilters(displayFiltersArray),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(displayFiltersArray)]
-  );
-
   const host = specsJson.host;
   const basePath = specsJson.basePath;
   const schema = specsJson.schemes
@@ -90,7 +84,6 @@ const CreateComponents = ({ specsJson }) => {
   // build 'get' fields to the UI
   serviceEndpoitsWithGetOption.forEach(ep => {
     const epParamsArray = ep[1].get.parameters;
-    if (epParamsArray.length === 0) return null;
 
     epParamsArray.forEach(epParams => {
       switch (epParams.type) {
@@ -147,6 +140,12 @@ const CreateComponents = ({ specsJson }) => {
       })}
     </tr>
   ));
+
+  React.useEffect(
+    () => setDisplayFilters(displayFiltersArray),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(displayFiltersArray)]
+  );
 
   const uiObject = { displayFilters, tableColumns, tableData };
 

@@ -21,7 +21,7 @@ const GenerateView = ({
   const { displayFilters, tableColumns, tableData } = uiObject;
   const currentService = menuItems[selectedMenuItemIndex];
 
-  const displayFiltersInputs = displayFilters?.map(f => {
+  const displayFiltersInputs = displayFilters?.map((f, index) => {
     const name = f.name;
     const type = f.type ? f.type : 'text';
     const options = f.options ? f.options : [];
@@ -29,7 +29,7 @@ const GenerateView = ({
 
     if (type === 'array') {
       return (
-        <div key={name} className="col">
+        <div key={`${name}_${index}`} className="col">
           <DropDownField
             name={name}
             label={capitalize(name)}
@@ -41,7 +41,7 @@ const GenerateView = ({
       );
     } else {
       return (
-        <div key={name} className="col">
+        <div key={`${name}_${index}`} className="col">
           <TextField
             name={name}
             label={capitalize(name)}
