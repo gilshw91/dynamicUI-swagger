@@ -1,0 +1,17 @@
+.app-header {
+  background-color: #8497b0;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.app-header h2 {
+  color: white;
+}
+
+.app-header label {
+  color: #f2f2f2;
+}
+
+#api-utl-input {
+  width: 50%;
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { capitalize } from '../../utils';
 
 const DropDownField = ({
   name,
@@ -19,12 +20,13 @@ const DropDownField = ({
           value={value}
           onChange={onChange}
           className="form-control"
+          defaultValue={defaultOption}
         >
-          <option value="">{defaultOption}</option>
+          <option value=""></option>
           {options.map(option => {
             return (
               <option key={option} value={option}>
-                {option}
+                {capitalize(option)}
               </option>
             );
           })}

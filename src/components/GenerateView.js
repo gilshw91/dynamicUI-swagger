@@ -1,78 +1,111 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import TabControl from './TabControl';
+
+import NavBar from './shared/NavBar';
 import TextField from './shared/TextField';
 import DropDownField from './shared/DropDownField';
 
-const GenerateView = ({ inputFieldsObject }) => {
-  const [inputFieldsObj, setInputFieldsObj] = useState(inputFieldsObject);
-  const [selectedDefinition, setSelectedDefinition] = useState(
-    Object.keys(inputFieldsObj)[0]
-  );
+import { capitalize } from '../utils';
+import './GenerateView.css';
 
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    const elementsIndex = inputFieldsObj[selectedDefinition].findIndex(
-      o => o.name === name
-    );
+const GenerateView = ({
+  appInfo,
+  menuItems,
+  selectedMenuItemIndex,
+  uiObject,
+  fetchResponse,
+  onUiInputChange,
+  onMenuItemClick,
+}) => {
+  const { response, loading, error } = fetchResponse;
+  const { displayFilters, tableColumns, tableData } = uiObject;
+  const currentService = menuItems[selectedMenuItemIndex];
 
-    let newArray = [...inputFieldsObj[selectedDefinition]];
-    newArray[elementsIndex] = {
-      ...newArray[elementsIndex],
-      value,
-    };
+  const displayFiltersInputs = displayFilters?.map(f => {
+    const name = f.name;
+    const type = f.type ? f.type : 'text';
+    const options = f.options ? f.options : [];
+    const value = f.value;
 
-    setInputFieldsObj(prevState => ({
-      ...prevState,
-      [selectedDefinition]: newArray,
-    }));
-  };
-
-  const handleFormSubmit = e => {
-    e.preventDefault();
-    console.log(inputFieldsObj[selectedDefinition]);
-  };
-
-  const definitionFields = inputFieldsObj[selectedDefinition].map(field =>
-    field.enum ? (
-      <DropDownField
-        key={field.name}
-        name={field.name}
-        label={field.description ? field.description : field.name}
-        value={field.value}
-        onChange={handleInputChange}
-        options={field.enum}
-      />
-    ) : (
-      <TextField
-        key={field.name}
-        name={field.name}
-        type={field.type}
-        label={field.description ? field.description : field.name}
-        value={field.value}
-        onChange={handleInputChange}
-      />
-    )
-  );
+    if (type === 'array') {
+      return (
+        <div key={name} className="col">
+          <DropDownField
+            name={name}
+            label={capitalize(name)}
+            options={options}
+            value={value}
+            onChange={e => onUiInputChange(e)}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <div key={name} className="col">
+          <TextField
+            name={name}
+            label={capitalize(name)}
+            type={type}
+            value={value}
+            onChange={e => onUiInputChange(e)}
+          />
+        </div>
+      );
+    }
+  });
 
   return (
-    <TabControl
-      headers={Object.keys(inputFieldsObj)}
-      activeHeader={selectedDefinition}
-      onHeaderClick={header => setSelectedDefinition(header)}
-    >
-      <form onSubmit={handleFormSubmit}>
-        {definitionFields}
-        <button type="submit" className="btn btn-primary">
-          Submit
-        </button>
-      </form>
-    </TabControl>
+    <div>
+      <div className="generated-app-header">
+        <h3>{appInfo.title}</h3>
+        <p>Version {appInfo.version}</p>
+      </div>
+      <NavBar
+        menuItems={menuItems}
+        selectedIndex={selectedMenuItemIndex}
+        onItemClick={selectedIndex => onMenuItemClick(selectedIndex)}
+      />
+      <div className="container p-4">
+        <form className="row">{displayFiltersInputs}</form>
+        {loading ? (
+          <div>Loading...</div>
+        ) : error ? (
+          <div>Error: {error}</div>
+        ) : response ? (
+          <>
+            <br />
+            <h4>
+              {currentService} ({response.length})
+            </h4>
+            <table className="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  {tableColumns.map(column => (
+                    <th key={column}>{capitalize(column)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>{tableData}</tbody>
+            </table>
+          </>
+        ) : (
+          <p>
+            <i>No records to show</i>
+          </p>
+        )}
+      </div>
+    </div>
   );
 };
 
 GenerateView.propTypes = {
-  inputFieldsObject: PropTypes.object.isRequired,
+  appInfo: PropTypes.object.isRequired,
+  menuItems: PropTypes.array.isRequired,
+  selectedMenuItemIndex: PropTypes.number.isRequired,
+  uiObject: PropTypes.object.isRequired,
+  fetchResponse: PropTypes.object.isRequired,
+  onUiInputChange: PropTypes.func.isRequired,
+  onMenuItemClick: PropTypes.func.isRequired,
 };
 
 export default GenerateView;

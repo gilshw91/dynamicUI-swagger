@@ -27,7 +27,9 @@ export const useFetch = (
         setLoading(false);
       }
     };
-    doFetch();
+
+    if (url) doFetch();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(options), url]);
   return { response, error, loading };

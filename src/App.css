@@ -1,0 +1,12 @@
+.app {
+  height: 100vh;
+}
+
+.content-container {
+  background-color: white;
+  min-height: calc(100% - 116px);
+}
+
+label {
+  text-transform: capitalize;
+}

@@ -4,6 +4,8 @@ import PropTypes from 'prop-types';
 import CreateComponents from './CreateComponents';
 import { useFetch } from '../hooks/useFetch';
 
+//import { mockData } from '../mockData';
+
 const GetJsonApi = ({ specsApiUrl }) => {
   const { response, loading, error } = useFetch(specsApiUrl);
 
