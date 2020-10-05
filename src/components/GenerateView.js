@@ -1,12 +1,12 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react";
+import PropTypes from "prop-types";
 
-import NavBar from './shared/NavBar';
-import TextField from './shared/TextField';
-import DropDownField from './shared/DropDownField';
+import NavBar from "./shared/NavBar";
+import TextField from "./shared/TextField";
+import DropDownField from "./shared/DropDownField";
 
-import { capitalize } from '../utils';
-import './GenerateView.css';
+import { capitalize } from "../utils";
+import "./GenerateView.css";
 
 const GenerateView = ({
   appInfo,
@@ -18,16 +18,29 @@ const GenerateView = ({
   onMenuItemClick,
 }) => {
   const { response, loading, error } = fetchResponse;
-  const { displayFilters, tableColumns, tableData } = uiObject;
+  const {
+    displayFilters,
+    tableColumns,
+    tableData,
+    displayPostOptionsArray,
+  } = uiObject;
   const currentService = menuItems[selectedMenuItemIndex];
+
+  const displayPostButtons = displayPostOptionsArray?.map((opt, index) => {
+    return (
+      <button key={opt} type="submit" className="button btn-primary ml-3">
+        {opt}
+      </button>
+    );
+  });
 
   const displayFiltersInputs = displayFilters?.map((f, index) => {
     const name = f.name;
-    const type = f.type ? f.type : 'text';
+    const type = f.type ? f.type : "text";
     const options = f.options ? f.options : [];
     const value = f.value;
 
-    if (type === 'array') {
+    if (type === "array") {
       return (
         <div key={`${name}_${index}`} className="col">
           <DropDownField
@@ -35,7 +48,7 @@ const GenerateView = ({
             label={capitalize(name)}
             options={options}
             value={value}
-            onChange={e => onUiInputChange(e)}
+            onChange={(e) => onUiInputChange(e)}
           />
         </div>
       );
@@ -47,7 +60,7 @@ const GenerateView = ({
             label={capitalize(name)}
             type={type}
             value={value}
-            onChange={e => onUiInputChange(e)}
+            onChange={(e) => onUiInputChange(e)}
           />
         </div>
       );
@@ -63,9 +76,10 @@ const GenerateView = ({
       <NavBar
         menuItems={menuItems}
         selectedIndex={selectedMenuItemIndex}
-        onItemClick={selectedIndex => onMenuItemClick(selectedIndex)}
+        onItemClick={(selectedIndex) => onMenuItemClick(selectedIndex)}
       />
       <div className="container p-4">
+        <div>{displayPostButtons}</div>
         <form className="row">{displayFiltersInputs}</form>
         {loading ? (
           <div>Loading...</div>
@@ -80,9 +94,10 @@ const GenerateView = ({
             <table className="table table-striped table-bordered">
               <thead>
                 <tr>
-                  {tableColumns.map(column => (
+                  {tableColumns.map((column) => (
                     <th key={column}>{capitalize(column)}</th>
                   ))}
+                  <th key="action">Actions</th>
                 </tr>
               </thead>
               <tbody>{tableData}</tbody>
