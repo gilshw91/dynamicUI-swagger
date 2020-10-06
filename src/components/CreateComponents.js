@@ -3,16 +3,16 @@ import PropTypes from "prop-types";
 import GenerateView from "./GenerateView";
 import { useFetch } from "../hooks/useFetch";
 import { capitalize } from "../utils";
+import useModal from "./shared/useModal";
 
-const CreateComponents = ({ specsJson }) => {
+const CreateComponents = ({ specsJson, apiUrl }) => {
   // the index of the current definition which has seleceted in the tab
   const [selectedDefinitionIndex, setselectedDefinitionIndex] = useState(0);
   // array of filters options exists in the api
   const [displayFilters, setDisplayFilters] = useState([]);
-  //array of the options to post
-  // const [displayPostOptions, setDisplayPostOptions] = useState([]);
   // the data that is fetched from the given url
   const [fetchURL, setFetchRequest] = useState("");
+  // using useFetch hook to get response from url
   const fetchResponse = useFetch(fetchURL);
 
   // contain the properties of the displayed definition that will be display as the coloumns of the table
@@ -30,7 +30,6 @@ const CreateComponents = ({ specsJson }) => {
       : "http://"
     : "http://";
   const baseApiUrl = schema + host + basePath;
-
   // mapping over the paths and slice the first char which is "/" and capitalize them
   const services_raw = Object.keys(specsJson.paths).map((service) => {
     const serviceNameWithoutSlash = service.substring(1);
@@ -62,39 +61,58 @@ const CreateComponents = ({ specsJson }) => {
   // get all endpoints
   const endpoints = Object.entries(specsJson.paths);
 
-  // filter to current service endpoints
+  // gets all endpoints of the current service
   const currentServiceEndpoints = endpoints.filter((ep) =>
     ep[0].startsWith("/" + currentService.toLowerCase())
   );
 
-  // filter to current service endpoints
+  // gets all endpoints with 'get' method
   const serviceEndpointsWithGetOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("get")
   );
+  // gets all endpoints with 'post' method
   const serviceEndpointsWithPostOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("post")
   );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const currentInputIndex = displayFilters.findIndex((d) => d.name === name);
 
+    const currentInputIndex = displayFilters.findIndex((d) => d.name === name);
     let newDisplayFilters = [...displayFilters];
-    newDisplayFilters[currentInputIndex] = {
-      ...newDisplayFilters[currentInputIndex],
-      value,
-    };
+
+    let i;
+    for (i = 0; i < newDisplayFilters.length; i++) {
+      if (i === currentInputIndex) {
+        newDisplayFilters[currentInputIndex] = {
+          ...newDisplayFilters[currentInputIndex],
+          value,
+        };
+      } else {
+        newDisplayFilters[i] = {
+          ...newDisplayFilters[i],
+          value: "",
+        };
+      }
+    }
+
     setDisplayFilters(newDisplayFilters);
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
+    //TODO: deal with a sample that have not found (like if id doesnt exist)
     switch (endpoint[1].get.parameters[0].in) {
-      //TODO: to deal with an sample that have not found (like if id doesnt exist)
       case "query":
         setFetchRequest(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
         break;
-      //TODO: fix the "path" case
-      // case "path":
-      //   setFetchRequest(`${baseApiUrl}/${endpoint[1].get.tags[0]}/${value}`);
-      //   break;
+      case "path":
+        const inputVarName = endpoint[1].get.parameters[0].name;
+        const reqUrl = endpoint[0]
+          .replace(inputVarName, value)
+          .replace("{", "")
+          .replace("}", "");
+        console.log("fetchResponse.response", fetchResponse.response);
+        setFetchRequest(`${baseApiUrl}${reqUrl}`);
+        if (fetchResponse) console.log("in if");
+        break;
       //TODO: alert if the case is the default
       default:
         break;
@@ -158,24 +176,47 @@ const CreateComponents = ({ specsJson }) => {
 
   //TODO: using this array -tempItemsById to append only uniques ids in line 143(!tempItemsById.includes(r[id]))?t
   // let tempItemsById = [];
-  tableData = fetchResponse?.response?.map((r, idx) => (
-    <tr key={idx}>
-      {tableColumns?.map((c) => {
-        switch (typeof r[c]) {
-          case "object":
-            //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
-            return <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>;
 
-          case "array":
-            //TODO: check if the array contains data (to avoid `[object, object]`)
-            return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
+  if (fetchResponse?.response && !Array.isArray(fetchResponse.response)) {
+    //console.log("DEBUG", fetchResponse.response);
+    tableData = (
+      <tr>
+        {Object.entries(fetchResponse.response).map((entry, index) => {
+          const keyName = entry[0];
+          const keyValue = entry[1];
 
-          default:
-            return <td key={`${c}_${idx}`}>{r[c]}</td>;
-        }
-      })}
-    </tr>
-  ));
+          return (
+            <td key={`${keyName}_row_${index}`}>
+              {Array.isArray(keyValue)
+                ? keyValue.join()
+                : typeof keyValue === "object"
+                ? Object.entries(keyValue).join()
+                : keyValue}
+            </td>
+          );
+        })}
+      </tr>
+    );
+  } else {
+    tableData = fetchResponse?.response?.map((r, idx) => (
+      <tr key={idx}>
+        {tableColumns?.map((c) => {
+          switch (typeof r[c]) {
+            case "object":
+              //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
+              return <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>;
+
+            case "array":
+              //TODO: check if the array contains data (to avoid `[object, object]`)
+              return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
+
+            default:
+              return <td key={`${c}_${idx}`}>{r[c]}</td>;
+          }
+        })}
+      </tr>
+    ));
+  }
 
   React.useEffect(
     () => setDisplayFilters(displayFiltersArray),
@@ -190,6 +231,7 @@ const CreateComponents = ({ specsJson }) => {
     displayPostOptionsArray,
   };
 
+  const { isShowing, toggle } = useModal();
   return (
     <GenerateView
       inputOpenApiJson={specsJson}
@@ -200,6 +242,8 @@ const CreateComponents = ({ specsJson }) => {
       fetchResponse={fetchResponse}
       onUiInputChange={handleInputChange}
       onMenuItemClick={(index) => setselectedDefinitionIndex(index)}
+      toggle={toggle}
+      isShowing={isShowing}
     />
   );
 };

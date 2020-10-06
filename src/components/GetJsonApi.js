@@ -1,8 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react";
+import PropTypes from "prop-types";
 
-import CreateComponents from './CreateComponents';
-import { useFetch } from '../hooks/useFetch';
+import CreateComponents from "./CreateComponents";
+import { useFetch } from "../hooks/useFetch";
 
 //import { mockData } from '../mockData';
 
@@ -14,7 +14,7 @@ const GetJsonApi = ({ specsApiUrl }) => {
   ) : error ? (
     <div>Fetch failed: {error}</div>
   ) : (
-    response && <CreateComponents specsJson={response} />
+    response && <CreateComponents specsJson={response} apiUrl={specsApiUrl} />
   );
 };
 

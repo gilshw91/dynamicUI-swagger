@@ -1,6 +1,6 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { capitalize } from '../../utils';
+import React from "react";
+import PropTypes from "prop-types";
+import { capitalize } from "../../utils";
 
 const DropDownField = ({
   name,
@@ -22,8 +22,10 @@ const DropDownField = ({
           className="form-control"
           defaultValue={defaultOption}
         >
-          <option value=""></option>
-          {options.map(option => {
+          <option disabled="disabled" value="" hidden="hidden">
+            -- Select {label} --
+          </option>
+          {options.map((option) => {
             return (
               <option key={option} value={option}>
                 {capitalize(option)}
@@ -42,7 +44,7 @@ DropDownField.propTypes = {
   label: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
   defaultOption: PropTypes.string,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  value: PropTypes.string,
   error: PropTypes.string,
   options: PropTypes.array,
 };
