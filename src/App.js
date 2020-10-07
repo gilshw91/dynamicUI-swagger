@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import GetJsonApi from './components/GetJsonApi';
-import Header from './components/Header';
-import './App.css';
+import React, { useState } from "react";
+import GetJsonApi from "./components/GetJsonApi";
+import Header from "./components/Header";
+import "./App.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const App = () => {
   const [intputApiValue, setInputApiValue] = useState(
-    'https://petstore.swagger.io/v2/swagger.json'
+    "https://petstore.swagger.io/v2/swagger.json"
   );
 
   const [swaggerApi, setSwaggerApi] = useState(intputApiValue);
 
-  const handleFormSubmit = e => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     setSwaggerApi(intputApiValue);
   };
@@ -21,7 +22,7 @@ const App = () => {
         title="Dynamic UI"
         label="OpenApi 2.0 source URL:"
         inputApiUrlValue={intputApiValue}
-        onInputApiUrlChange={e => setInputApiValue(e.target.value)}
+        onInputApiUrlChange={(e) => setInputApiValue(e.target.value)}
         onFormSubmit={handleFormSubmit}
       />
       <div className="container p-0 content-container">

@@ -1,13 +1,14 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { Button, Form, Table, Badge } from "react-bootstrap";
 
 import NavBar from "./shared/NavBar";
 import TextField from "./shared/TextField";
 import DropDownField from "./shared/DropDownField";
+import ModalComponent from "./shared/ModalComponent";
 
 import { capitalize } from "../utils";
 import "./GenerateView.css";
-import Modal from "./shared/Modal";
 
 const GenerateView = ({
   appInfo,
@@ -31,9 +32,9 @@ const GenerateView = ({
   const currentService = menuItems[selectedMenuItemIndex];
 
   const displayPostButtons = displayPostOptionsArray?.map((opt) => (
-    <button key={opt} className="btn btn-primary" onClick={toggle}>
+    <Button key={opt} variant="primary" onClick={toggle}>
       {capitalize(opt)}
-    </button>
+    </Button>
   ));
 
   const displayFiltersInputs = displayFilters?.map((f, index) => {
@@ -82,8 +83,8 @@ const GenerateView = ({
       />
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
-        <Modal isShowing={isShowing} hide={toggle} />
-        <form className="row">{displayFiltersInputs}</form>
+        <ModalComponent isShowing={isShowing} hide={toggle} />
+        <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (
           <div>Loading...</div>
         ) : error ? (
@@ -96,23 +97,50 @@ const GenerateView = ({
             <div>Error: {error}</div>
           )
         ) : response ? (
-          <>
-            <br />
-            <h4>
-              {currentService} ({response.length ? response.length : 1})
-            </h4>
-            <table className="table table-striped table-bordered">
-              <thead>
-                <tr>
-                  {tableColumns.map((column) => (
-                    <th key={column}>{capitalize(column)}</th>
-                  ))}
-                  <th key="action">Actions</th>
-                </tr>
-              </thead>
-              <tbody>{tableData}</tbody>
-            </table>
-          </>
+          Array.isArray(response) ? (
+            response.length ? (
+              <React.Fragment>
+                <br />
+                <h4>
+                  {currentService}{" "}
+                  <Badge variant="secondary">({response.length})</Badge>
+                </h4>
+                <Table striped bordered hover variant="dark">
+                  <thead>
+                    <tr>
+                      {tableColumns.map((column) => (
+                        <th key={column}>{capitalize(column)}</th>
+                      ))}
+                      <th key="action">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>{tableData}</tbody>
+                </Table>
+              </React.Fragment>
+            ) : (
+              <p>
+                <i>No records to show</i>
+              </p>
+            )
+          ) : (
+            <React.Fragment>
+              <br />
+              <h4>
+                {currentService} <Badge variant="secondary">({1})</Badge>
+              </h4>
+              <Table striped bordered hover variant="dark">
+                <thead>
+                  <tr>
+                    {tableColumns.map((column) => (
+                      <th key={column}>{capitalize(column)}</th>
+                    ))}
+                    <th key="action">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>{tableData}</tbody>
+              </Table>
+            </React.Fragment>
+          )
         ) : (
           <p>
             <i>No records to show</i>

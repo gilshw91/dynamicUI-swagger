@@ -22,9 +22,7 @@ const DropDownField = ({
           className="form-control"
           defaultValue={defaultOption}
         >
-          <option disabled="disabled" value="" hidden="hidden">
-            -- Select {label} --
-          </option>
+          <option value="">-- Select {label} --</option>
           {options.map((option) => {
             return (
               <option key={option} value={option}>

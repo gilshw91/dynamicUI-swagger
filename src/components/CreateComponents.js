@@ -99,6 +99,8 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
     setDisplayFilters(newDisplayFilters);
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
     //TODO: deal with a sample that have not found (like if id doesnt exist)
+    console.log("response type", Array.isArray(fetchResponse.response));
+    console.log("fetchResponse.response", fetchResponse.response);
     switch (endpoint[1].get.parameters[0].in) {
       case "query":
         setFetchRequest(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
@@ -109,7 +111,7 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
           .replace(inputVarName, value)
           .replace("{", "")
           .replace("}", "");
-        console.log("fetchResponse.response", fetchResponse.response);
+
         setFetchRequest(`${baseApiUrl}${reqUrl}`);
         if (fetchResponse) console.log("in if");
         break;
