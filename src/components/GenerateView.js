@@ -69,7 +69,6 @@ const GenerateView = ({
       );
     }
   });
-
   return (
     <div>
       <div className="generated-app-header">

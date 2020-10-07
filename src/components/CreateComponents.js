@@ -4,8 +4,9 @@ import GenerateView from "./GenerateView";
 import { useFetch } from "../hooks/useFetch";
 import { capitalize } from "../utils";
 import useModal from "./shared/useModal";
+import { Button } from "react-bootstrap";
 
-const CreateComponents = ({ specsJson, apiUrl }) => {
+const CreateComponents = ({ specsJson }) => {
   // the index of the current definition which has seleceted in the tab
   const [selectedDefinitionIndex, setselectedDefinitionIndex] = useState(0);
   // array of filters options exists in the api
@@ -74,6 +75,14 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
   const serviceEndpointsWithPostOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("post")
   );
+  // gets all endpoints with 'put' method
+  const serviceEndpointsWithPutOption = currentServiceEndpoints.filter((ep) =>
+    Object.keys(ep[1]).includes("put")
+  );
+  // gets all endpoints with 'delete' method
+  const serviceEndpointsWithDeleteOption = currentServiceEndpoints.filter(
+    (ep) => Object.keys(ep[1]).includes("delete")
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -99,8 +108,6 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
     setDisplayFilters(newDisplayFilters);
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
     //TODO: deal with a sample that have not found (like if id doesnt exist)
-    console.log("response type", Array.isArray(fetchResponse.response));
-    console.log("fetchResponse.response", fetchResponse.response);
     switch (endpoint[1].get.parameters[0].in) {
       case "query":
         setFetchRequest(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
@@ -113,7 +120,6 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
           .replace("}", "");
 
         setFetchRequest(`${baseApiUrl}${reqUrl}`);
-        if (fetchResponse) console.log("in if");
         break;
       //TODO: alert if the case is the default
       default:
@@ -176,11 +182,7 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
   });
   // setDisplayPostOptions(displayPostOptionsArray); infinit loop!
 
-  //TODO: using this array -tempItemsById to append only uniques ids in line 143(!tempItemsById.includes(r[id]))?t
-  // let tempItemsById = [];
-
   if (fetchResponse?.response && !Array.isArray(fetchResponse.response)) {
-    //console.log("DEBUG", fetchResponse.response);
     tableData = (
       <tr>
         {Object.entries(fetchResponse.response).map((entry, index) => {
@@ -201,22 +203,34 @@ const CreateComponents = ({ specsJson, apiUrl }) => {
     );
   } else {
     tableData = fetchResponse?.response?.map((r, idx) => (
-      <tr key={idx}>
-        {tableColumns?.map((c) => {
-          switch (typeof r[c]) {
-            case "object":
-              //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
-              return <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>;
+      <React.Fragment>
+        <tr key={idx}>
+          {tableColumns?.map((c) => {
+            switch (typeof r[c]) {
+              case "object":
+                //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
+                return (
+                  <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>
+                );
 
-            case "array":
-              //TODO: check if the array contains data (to avoid `[object, object]`)
-              return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
+              case "array":
+                //TODO: check if the array contains data (to avoid `[object, object]`)
+                return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
 
-            default:
-              return <td key={`${c}_${idx}`}>{r[c]}</td>;
-          }
-        })}
-      </tr>
+              default:
+                return <td key={`${c}_${idx}`}>{r[c]}</td>;
+            }
+          })}
+          <td>
+            {serviceEndpointsWithPutOption ? (
+              <Button variant="warning">Edit</Button>
+            ) : null}
+            {serviceEndpointsWithDeleteOption ? (
+              <Button variant="danger">Delete</Button>
+            ) : null}
+          </td>
+        </tr>
+      </React.Fragment>
     ));
   }
 
