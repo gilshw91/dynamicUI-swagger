@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import GetJsonApi from "./components/GetJsonApi";
 import Header from "./components/Header";
 import "./App.css";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 const App = () => {
   const [intputApiValue, setInputApiValue] = useState(

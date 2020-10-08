@@ -5,10 +5,11 @@ import { useFetch } from "../hooks/useFetch";
 import { capitalize } from "../utils";
 import useModal from "./shared/useModal";
 import { Button } from "react-bootstrap";
+import "./CreateComponents.css";
 
 const CreateComponents = ({ specsJson }) => {
   // the index of the current definition which has seleceted in the tab
-  const [selectedDefinitionIndex, setselectedDefinitionIndex] = useState(0);
+  const [selectedDefinitionIndex, setSelectedDefinitionIndex] = useState(0);
   // array of filters options exists in the api
   const [displayFilters, setDisplayFilters] = useState([]);
   // the data that is fetched from the given url
@@ -84,6 +85,11 @@ const CreateComponents = ({ specsJson }) => {
     (ep) => Object.keys(ep[1]).includes("delete")
   );
 
+  const handleMenuItemClick = (index) => {
+    setSelectedDefinitionIndex(index);
+    setFetchRequest("");
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -104,8 +110,11 @@ const CreateComponents = ({ specsJson }) => {
         };
       }
     }
-
     setDisplayFilters(newDisplayFilters);
+    if (!value) {
+      setFetchRequest("");
+      return;
+    }
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
     //TODO: deal with a sample that have not found (like if id doesnt exist)
     switch (endpoint[1].get.parameters[0].in) {
@@ -118,7 +127,6 @@ const CreateComponents = ({ specsJson }) => {
           .replace(inputVarName, value)
           .replace("{", "")
           .replace("}", "");
-
         setFetchRequest(`${baseApiUrl}${reqUrl}`);
         break;
       //TODO: alert if the case is the default
@@ -203,8 +211,8 @@ const CreateComponents = ({ specsJson }) => {
     );
   } else {
     tableData = fetchResponse?.response?.map((r, idx) => (
-      <React.Fragment>
-        <tr key={idx}>
+      <React.Fragment key={idx}>
+        <tr>
           {tableColumns?.map((c) => {
             switch (typeof r[c]) {
               case "object":
@@ -221,7 +229,7 @@ const CreateComponents = ({ specsJson }) => {
                 return <td key={`${c}_${idx}`}>{r[c]}</td>;
             }
           })}
-          <td>
+          <td className="actions-buttons-wrapper">
             {serviceEndpointsWithPutOption ? (
               <Button variant="warning">Edit</Button>
             ) : null}
@@ -250,14 +258,13 @@ const CreateComponents = ({ specsJson }) => {
   const { isShowing, toggle } = useModal();
   return (
     <GenerateView
-      inputOpenApiJson={specsJson}
       appInfo={specsJson.info}
       menuItems={services}
       selectedMenuItemIndex={selectedDefinitionIndex}
       uiObject={uiObject}
       fetchResponse={fetchResponse}
       onUiInputChange={handleInputChange}
-      onMenuItemClick={(index) => setselectedDefinitionIndex(index)}
+      onMenuItemClick={handleMenuItemClick}
       toggle={toggle}
       isShowing={isShowing}
     />

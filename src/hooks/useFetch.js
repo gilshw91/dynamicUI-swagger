@@ -13,9 +13,16 @@ export const useFetch = (
       setLoading(true);
       try {
         const res = await fetch(url, options);
-
         if (res.status !== 200) {
-          setError(`${res.message} [${res.status}]`);
+          let msg = `${res.message} [${res.status}]`;
+          switch (res.status) {
+            case 404:
+              msg = "Not Found";
+              break;
+            default:
+              break;
+          }
+          setError(msg);
         } else {
           const json = await res.json();
           setError(null);
@@ -27,8 +34,13 @@ export const useFetch = (
         setLoading(false);
       }
     };
-
-    if (url) doFetch();
+    if (url) {
+      doFetch();
+    } else {
+      setError(null);
+      setResponse(null);
+      setLoading(false);
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(options), url]);

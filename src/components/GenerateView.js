@@ -5,7 +5,7 @@ import { Button, Form, Table, Badge } from "react-bootstrap";
 import NavBar from "./shared/NavBar";
 import TextField from "./shared/TextField";
 import DropDownField from "./shared/DropDownField";
-import ModalComponent from "./shared/ModalComponent";
+import Modal from "./shared/Modal";
 
 import { capitalize } from "../utils";
 import "./GenerateView.css";
@@ -82,19 +82,23 @@ const GenerateView = ({
       />
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
-        <ModalComponent isShowing={isShowing} hide={toggle} />
+        <Modal isShowing={isShowing} hide={toggle}>
+          <p>Good Morning</p>
+          <h1>סבאח אל חיר</h1>
+        </Modal>
         <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (
           <div>Loading...</div>
         ) : error ? (
           //TODO: I have cheated here...
-          (error === "undefined [404]") | (error === "undefined [405]") ? (
-            <p>
-              <i>No records to show</i>
-            </p>
-          ) : (
-            <div>Error: {error}</div>
-          )
+          // (error === "undefined [404]") | (error === "undefined [405]") ? (
+          // <p>
+          //   <i>No records to show</i>
+          // </p>
+          // ) : (
+          //   <div>Error: {error}</div>
+          // )
+          <div>Error: {error}</div>
         ) : response ? (
           Array.isArray(response) ? (
             response.length ? (
@@ -102,7 +106,7 @@ const GenerateView = ({
                 <br />
                 <h4>
                   {currentService}{" "}
-                  <Badge variant="secondary">({response.length})</Badge>
+                  <Badge variant="secondary">{response.length}</Badge>
                 </h4>
                 <Table striped bordered hover variant="dark">
                   <thead>
@@ -125,7 +129,7 @@ const GenerateView = ({
             <React.Fragment>
               <br />
               <h4>
-                {currentService} <Badge variant="secondary">({1})</Badge>
+                {currentService} <Badge variant="secondary">{1}</Badge>
               </h4>
               <Table striped bordered hover variant="dark">
                 <thead>
