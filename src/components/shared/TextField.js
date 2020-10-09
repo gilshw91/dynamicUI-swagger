@@ -1,5 +1,5 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React from "react";
+import PropTypes from "prop-types";
 
 const TextField = ({
   name,
@@ -10,7 +10,7 @@ const TextField = ({
   error,
   onChange,
 }) => {
-  let wrapperClass = 'form-group';
+  let wrapperClass = "form-group";
   if (error && error.length > 0) {
     wrapperClass += ` has-error`;
   }
@@ -34,7 +34,7 @@ const TextField = ({
 };
 
 TextField.defaultProps = {
-  type: 'text',
+  type: "text",
 };
 
 TextField.propTypes = {

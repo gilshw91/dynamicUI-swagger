@@ -18,7 +18,8 @@ const GenerateView = ({
   fetchResponse,
   onUiInputChange,
   onMenuItemClick,
-  toggle,
+  OnPostOptionClicked,
+  toggle, //TODO:still need it?
   isShowing,
 }) => {
   const { response, loading, error } = fetchResponse;
@@ -27,14 +28,22 @@ const GenerateView = ({
     tableColumns,
     tableData,
     displayPostOptionsArray,
+    formInModal,
   } = uiObject;
 
   const currentService = menuItems[selectedMenuItemIndex];
 
   const displayPostButtons = displayPostOptionsArray?.map((opt) => (
-    <Button key={opt} variant="primary" onClick={toggle}>
-      {capitalize(opt)}
-    </Button>
+    <React.Fragment key={opt}>
+      <Button
+        onClick={() => {
+          toggle();
+          OnPostOptionClicked(opt);
+        }}
+      >
+        {capitalize(opt)}
+      </Button>
+    </React.Fragment>
   ));
 
   const displayFiltersInputs = displayFilters?.map((f, index) => {
@@ -83,8 +92,7 @@ const GenerateView = ({
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
         <Modal isShowing={isShowing} hide={toggle}>
-          <p>Good Morning</p>
-          <h1>סבאח אל חיר</h1>
+          <Form>{formInModal}</Form>
         </Modal>
         <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (

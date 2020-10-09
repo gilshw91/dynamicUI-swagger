@@ -14,7 +14,7 @@ const GetJsonApi = ({ specsApiUrl }) => {
   ) : error ? (
     <div>Fetch failed: {error}</div>
   ) : (
-    response && <CreateComponents specsJson={response} apiUrl={specsApiUrl} />
+    response && <CreateComponents specsJson={response} />
   );
 };
 

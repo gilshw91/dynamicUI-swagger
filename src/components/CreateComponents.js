@@ -4,7 +4,7 @@ import GenerateView from "./GenerateView";
 import { useFetch } from "../hooks/useFetch";
 import { capitalize } from "../utils";
 import useModal from "./shared/useModal";
-import { Button } from "react-bootstrap";
+import { Button, Form, FormLabel, Row, Col } from "react-bootstrap";
 import "./CreateComponents.css";
 
 const CreateComponents = ({ specsJson }) => {
@@ -49,11 +49,9 @@ const CreateComponents = ({ specsJson }) => {
   );
   // the name of the selected path
   const currentService = services[selectedDefinitionIndex];
-
   // get definitions if exists
   const definitions = specsJson.definitions;
   const currentServiceDefinition = definitions[currentService];
-
   // if definitions exist- appending their name to the table as coloumns
   if (currentServiceDefinition) {
     const properties = currentServiceDefinition.properties;
@@ -84,18 +82,97 @@ const CreateComponents = ({ specsJson }) => {
   const serviceEndpointsWithDeleteOption = currentServiceEndpoints.filter(
     (ep) => Object.keys(ep[1]).includes("delete")
   );
+  //handle Modal
+  const { isShowing, toggle } = useModal();
 
+  //displays fields in modal due to the option which has clicked to post
+  const [formInModal, setFormInModal] = useState(
+    <div> There is no Fields to show</div>
+  );
+
+  //TODO: DOESNT WORKS ON 'USER'
+  //TODO: be able to chane the title of the modal
+  const handlePostOptionClicked = (option) => {
+    // let arrayOfFields = []; //TODO: maybe an object to save the type also
+    const optionData = serviceEndpointsWithPostOption.find(
+      (opt) => opt[1].post.operationId === option
+    );
+    let arrayOfFiledsElements = [];
+
+    if (Object.keys(optionData[1].post.parameters[0]).includes("schema")) {
+      const ref = optionData[1].post.parameters[0].schema.$ref
+        .replace("#/definitions", "") //TODO: need to fix this? or its ok to replace the 'definitions'?
+        .replace("/", "");
+
+      const fullRef = specsJson.definitions[ref];
+      const refProperties = Object.keys(fullRef.properties);
+      arrayOfFiledsElements = [
+        ...arrayOfFiledsElements,
+        refProperties.map((field, indx) => {
+          return (
+            <Form.Group
+              key={`${field}_{indx}`}
+              as={Row}
+              controlId={`${field}_{indx}`}
+            >
+              <Col>
+                <FormLabel> {capitalize(field)}</FormLabel>
+              </Col>
+              <Col>
+                <Form.Control
+                  type="text"
+                  name={field}
+                  placeholder={capitalize(field)}
+                />
+              </Col>
+            </Form.Group>
+          );
+        }),
+      ];
+      setFormInModal(arrayOfFiledsElements);
+    } else {
+      // <div key={`${opt}_form`>
+      arrayOfFiledsElements = [
+        ...arrayOfFiledsElements,
+        optionData[1].post.parameters.map((field, indx) => {
+          return (
+            <Form.Group
+              key={`${field.name}_{indx}`}
+              as={Row}
+              controlId={`${field.name}_{indx}`}
+            >
+              <Col>
+                <FormLabel> {capitalize(field.name)}</FormLabel>
+              </Col>
+              <Col>
+                <Form.Control
+                  type={field.type}
+                  name={field.name}
+                  placeholder={capitalize(field.name)}
+                />
+              </Col>
+            </Form.Group>
+          );
+        }),
+      ];
+      setFormInModal(arrayOfFiledsElements);
+    }
+  };
+  //TODO: fix async to reset before changing to another item
+  //TODO: fix coloumns in other menu items
+  // to inizialize the index of the item in navbar and reset the response
   const handleMenuItemClick = (index) => {
     setSelectedDefinitionIndex(index);
     setFetchRequest("");
   };
-
+  // handle on changing input in the filters
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
     const currentInputIndex = displayFilters.findIndex((d) => d.name === name);
     let newDisplayFilters = [...displayFilters];
 
+    // reset previous value of another filter
     let i;
     for (i = 0; i < newDisplayFilters.length; i++) {
       if (i === currentInputIndex) {
@@ -110,13 +187,15 @@ const CreateComponents = ({ specsJson }) => {
         };
       }
     }
+
     setDisplayFilters(newDisplayFilters);
+    // handle the case which has no value inserted- reset response
     if (!value) {
       setFetchRequest("");
       return;
     }
+    // handle and get the data by the inserted value
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
-    //TODO: deal with a sample that have not found (like if id doesnt exist)
     switch (endpoint[1].get.parameters[0].in) {
       case "query":
         setFetchRequest(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
@@ -180,6 +259,7 @@ const CreateComponents = ({ specsJson }) => {
       }
     });
   });
+
   let displayPostOptionsArray = [];
 
   serviceEndpointsWithPostOption.forEach((ep) => {
@@ -188,7 +268,6 @@ const CreateComponents = ({ specsJson }) => {
       ep[1].post.operationId,
     ];
   });
-  // setDisplayPostOptions(displayPostOptionsArray); infinit loop!
 
   if (fetchResponse?.response && !Array.isArray(fetchResponse.response)) {
     tableData = (
@@ -253,9 +332,9 @@ const CreateComponents = ({ specsJson }) => {
     tableColumns,
     tableData,
     displayPostOptionsArray,
+    formInModal,
   };
 
-  const { isShowing, toggle } = useModal();
   return (
     <GenerateView
       appInfo={specsJson.info}
@@ -265,6 +344,7 @@ const CreateComponents = ({ specsJson }) => {
       fetchResponse={fetchResponse}
       onUiInputChange={handleInputChange}
       onMenuItemClick={handleMenuItemClick}
+      OnPostOptionClicked={handlePostOptionClicked}
       toggle={toggle}
       isShowing={isShowing}
     />
