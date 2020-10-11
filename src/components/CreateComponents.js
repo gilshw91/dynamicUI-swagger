@@ -6,6 +6,8 @@ import { capitalize } from "../utils";
 import useModal from "./shared/useModal";
 import { Button, Form, FormLabel, Row, Col } from "react-bootstrap";
 import "./CreateComponents.css";
+import { notifySubmit } from "./shared/toastify";
+import { useForm } from "react-hook-form";
 
 const CreateComponents = ({ specsJson }) => {
   // the index of the current definition which has seleceted in the tab
@@ -90,17 +92,43 @@ const CreateComponents = ({ specsJson }) => {
     <div> There is no Fields to show</div>
   );
 
-  //TODO: DOESNT WORKS ON 'USER'
-  //TODO: be able to chane the title of the modal
+  const { register, handleSubmit } = useForm();
+  const [dataToPost, setDataToPost] = useState({});
+
+  //TODO: fix post request, and submiit tasot only after response 200 returns
+  const handleSubmitInModal = (data) => {
+    console.log("data", data);
+    toggle();
+    notifySubmit();
+    let valuesToPost = {};
+    Object.keys(data).forEach((key) => {
+      valuesToPost[key] = data[key];
+    });
+    setDataToPost(valuesToPost);
+    setFetchRequest(specsJson, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: JSON.stringify(dataToPost),
+    });
+  };
+  // TODO: be able to change the title of the modal
   const handlePostOptionClicked = (option) => {
     // let arrayOfFields = []; //TODO: maybe an object to save the type also
     const optionData = serviceEndpointsWithPostOption.find(
       (opt) => opt[1].post.operationId === option
     );
     let arrayOfFiledsElements = [];
-
     if (Object.keys(optionData[1].post.parameters[0]).includes("schema")) {
-      const ref = optionData[1].post.parameters[0].schema.$ref
+      let refInSwagger;
+      // if the body is an array, 'schema' will be placed within "items"
+      if (
+        Object.keys(optionData[1].post.parameters[0].schema).includes("items")
+      ) {
+        refInSwagger = optionData[1].post.parameters[0].schema.items.$ref;
+      } else {
+        refInSwagger = optionData[1].post.parameters[0].schema.$ref;
+      }
+      const ref = refInSwagger
         .replace("#/definitions", "") //TODO: need to fix this? or its ok to replace the 'definitions'?
         .replace("/", "");
 
@@ -123,6 +151,7 @@ const CreateComponents = ({ specsJson }) => {
                   type="text"
                   name={field}
                   placeholder={capitalize(field)}
+                  ref={register}
                 />
               </Col>
             </Form.Group>
@@ -149,6 +178,7 @@ const CreateComponents = ({ specsJson }) => {
                   type={field.type}
                   name={field.name}
                   placeholder={capitalize(field.name)}
+                  ref={register}
                 />
               </Col>
             </Form.Group>
@@ -345,6 +375,7 @@ const CreateComponents = ({ specsJson }) => {
       onUiInputChange={handleInputChange}
       onMenuItemClick={handleMenuItemClick}
       OnPostOptionClicked={handlePostOptionClicked}
+      onSubmit={handleSubmit(handleSubmitInModal)}
       toggle={toggle}
       isShowing={isShowing}
     />

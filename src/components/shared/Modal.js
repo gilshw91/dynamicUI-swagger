@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Button, Modal as PopUp } from "react-bootstrap";
 
-const Modal = ({ isShowing, hide, children }) => (
+const Modal = ({ isShowing, hide, onSubmit, children }) => (
   <>
     <PopUp show={isShowing} onHide={hide}>
       <PopUp.Header closeButton>
@@ -13,7 +13,7 @@ const Modal = ({ isShowing, hide, children }) => (
         <Button variant="secondary" onClick={hide}>
           Close
         </Button>
-        <Button onClick={hide}>Save Changes</Button>
+        <Button onClick={onSubmit}>Save Changes</Button>
       </PopUp.Footer>
     </PopUp>
   </>

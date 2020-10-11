@@ -6,8 +6,10 @@ import NavBar from "./shared/NavBar";
 import TextField from "./shared/TextField";
 import DropDownField from "./shared/DropDownField";
 import Modal from "./shared/Modal";
+import { ToastContainer } from "react-toastify";
 
 import { capitalize } from "../utils";
+
 import "./GenerateView.css";
 
 const GenerateView = ({
@@ -19,6 +21,7 @@ const GenerateView = ({
   onUiInputChange,
   onMenuItemClick,
   OnPostOptionClicked,
+  onSubmit,
   toggle, //TODO:still need it?
   isShowing,
 }) => {
@@ -91,9 +94,10 @@ const GenerateView = ({
       />
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
-        <Modal isShowing={isShowing} hide={toggle}>
+        <Modal isShowing={isShowing} hide={toggle} onSubmit={onSubmit}>
           <Form>{formInModal}</Form>
         </Modal>
+        <ToastContainer autoClose={3000} />
         <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (
           <div>Loading...</div>
