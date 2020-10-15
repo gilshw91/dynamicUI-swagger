@@ -16,8 +16,9 @@ const CreateComponents = ({ specsJson }) => {
   const [displayFilters, setDisplayFilters] = useState([]);
   // the data that is fetched from the given url
   const [fetchURL, setFetchRequest] = useState("");
+  const [fetchOptions, setFetchOptions] = useState({});
   // using useFetch hook to get response from url
-  const fetchResponse = useFetch(fetchURL);
+  const fetchResponse = useFetch(fetchURL, fetchOptions);
 
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
@@ -105,18 +106,25 @@ const CreateComponents = ({ specsJson }) => {
       valuesToPost[key] = data[key];
     });
     setDataToPost(valuesToPost);
-    setFetchRequest(specsJson, {
+    const currentServiceLowerCase = currentService.toLowerCase();
+    // console.log("url", baseApiUrl + "/" + currentServiceEndpoints);
+    setFetchRequest(`${baseApiUrl}/${currentServiceLowerCase}`);
+    setFetchOptions({
       method: "POST",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(dataToPost),
     });
   };
   // TODO: be able to change the title of the modal
-  const handlePostOptionClicked = (option) => {
+  const handlePostOptionClicked = (option, indexOfOption) => {
     // let arrayOfFields = []; //TODO: maybe an object to save the type also
-    const optionData = serviceEndpointsWithPostOption.find(
-      (opt) => opt[1].post.operationId === option
-    );
+    // const optionData = serviceEndpointsWithPostOption.find(
+    //   (opt) => opt[1].post.operationId === option
+    // );
+    const optionData = serviceEndpointsWithPostOption[indexOfOption];
     let arrayOfFiledsElements = [];
     if (Object.keys(optionData[1].post.parameters[0]).includes("schema")) {
       let refInSwagger;
@@ -134,25 +142,186 @@ const CreateComponents = ({ specsJson }) => {
 
       const fullRef = specsJson.definitions[ref];
       const refProperties = Object.keys(fullRef.properties);
+      let inputUiInModal;
+      let tempRef;
       arrayOfFiledsElements = [
         ...arrayOfFiledsElements,
         refProperties.map((field, indx) => {
+          switch (fullRef.properties[field].type) {
+            case "array": {
+              if (fullRef.properties[field].items.type) {
+                inputUiInModal = (
+                  <Form.Control
+                    type={
+                      fullRef.properties[field].items.type === "string"
+                        ? "text"
+                        : "number"
+                    } // TODO: another switch
+                    name={field + "[0]"} // This cast the value to "array"
+                    placeholder={"Please separate by comma"}
+                    ref={register}
+                  />
+                );
+              } else {
+                //  if (fullRef.properties[field].items.$ref) {
+                tempRef = fullRef.properties[field].items.$ref
+                  .replace("#/definitions", "")
+                  .replace("/", "");
+                inputUiInModal = (
+                  <Form.Group
+                    key={field}
+                    as={Col}
+                    controlId={`${field}_${indx}`}
+                    ref={register}
+                    name={field}
+                  >
+                    {Object.keys(specsJson.definitions[tempRef].properties).map(
+                      (subField) => {
+                        return (
+                          <Form.Control
+                            key={`${subField}_${indx}`}
+                            type={
+                              specsJson.definitions[tempRef].properties[
+                                subField
+                              ].type === "string"
+                                ? "text"
+                                : "number"
+                            }
+                            name={[field + "[0]" + subField]} // This cast the value to object inside an array
+                            placeholder={
+                              capitalize(field) + "-" + capitalize(subField)
+                            }
+                            ref={register}
+                          />
+                        );
+                      }
+                    )}
+                  </Form.Group>
+                );
+              }
+              break;
+            }
+
+            case "string":
+              // if there is a list of options:
+              //TODO: handle with string, date-time like in store/order
+              //TODO: fix post data of the enum (like in store- not saved)
+              if (fullRef.properties[field].enum) {
+                inputUiInModal = [];
+                fullRef.properties[field].enum.forEach((item) => {
+                  inputUiInModal = [
+                    ...inputUiInModal,
+                    <option key={item} name={item}>
+                      {item}
+                    </option>,
+                  ];
+                });
+              } else
+                inputUiInModal = (
+                  <Form.Control
+                    type="text"
+                    name={field}
+                    placeholder={"Please enter " + capitalize(field)}
+                    ref={register}
+                  />
+                );
+
+              break;
+            case "integer":
+              inputUiInModal = (
+                <Form.Control
+                  type="number"
+                  name={field}
+                  placeholder={"Please enter " + capitalize(field)}
+                  ref={register}
+                />
+              );
+              break;
+            case "file":
+              inputUiInModal = (
+                <Form.Control
+                  type="file"
+                  name={field}
+                  placeholder={"Please enter " + capitalize(field)}
+                  ref={register}
+                />
+              );
+              break;
+            case "boolean":
+              inputUiInModal = [
+                <option key={`${field}_false`} name="false">
+                  False
+                </option>,
+                <option key={`${field}_true`} name="true">
+                  True
+                </option>,
+              ];
+              break;
+            // type undefined due to field has $ref
+            default:
+              let fieldsOfObject;
+              if (fullRef.properties[field]["$ref"]) {
+                const tempRef = fullRef.properties[field].$ref
+                  .replace("#/definitions", "")
+                  .replace("/", "");
+                fieldsOfObject = specsJson.definitions[tempRef];
+
+                //TODO: map all keys
+                inputUiInModal = (
+                  <Form.Group
+                    key={field}
+                    as={Col}
+                    controlId={`${field}_${indx}`}
+                    ref={register}
+                    name={field}
+                  >
+                    {Object.keys(fieldsOfObject.properties).map((subField) => {
+                      return (
+                        <Form.Control
+                          key={`${subField}_${indx}`}
+                          type={
+                            fieldsOfObject.properties[subField].type ===
+                            "string"
+                              ? "text"
+                              : "number"
+                          }
+                          name={field + "." + subField} // This cast the value to "object"
+                          placeholder={
+                            capitalize(field) + "-" + capitalize(subField)
+                          }
+                          ref={register}
+                        />
+                      );
+                    })}
+                  </Form.Group>
+                );
+              } else {
+                //TODO: doesnt work for all cases
+                inputUiInModal = (
+                  <Form.Control
+                    type="text"
+                    name={field} //TODO: cast the value to "object"
+                    placeholder={"Please enter " + capitalize(field)}
+                    ref={register}
+                  />
+                );
+              }
+          }
           return (
             <Form.Group
-              key={`${field}_{indx}`}
+              key={`${field}_${indx}`}
               as={Row}
-              controlId={`${field}_{indx}`}
+              controlId={`${field}_${indx}`}
             >
               <Col>
                 <FormLabel> {capitalize(field)}</FormLabel>
               </Col>
               <Col>
-                <Form.Control
-                  type="text"
-                  name={field}
-                  placeholder={capitalize(field)}
-                  ref={register}
-                />
+                {Array.isArray(inputUiInModal) ? (
+                  <Form.Control as="select">{inputUiInModal}</Form.Control>
+                ) : (
+                  inputUiInModal
+                )}
               </Col>
             </Form.Group>
           );
@@ -161,25 +330,80 @@ const CreateComponents = ({ specsJson }) => {
       setFormInModal(arrayOfFiledsElements);
     } else {
       // <div key={`${opt}_form`>
+
       arrayOfFiledsElements = [
         ...arrayOfFiledsElements,
         optionData[1].post.parameters.map((field, indx) => {
+          let inputUiInModal;
+          switch (field.type) {
+            case "array":
+              inputUiInModal = (
+                <Form.Control
+                  type={field.type === "string" ? "text" : "number"} // TODO: another switch
+                  name={field.name + "[0]"} // This cast the value to "array"
+                  placeholder={"Please separate by comma"}
+                  ref={register}
+                />
+              );
+              break;
+            case "string":
+              inputUiInModal = (
+                <Form.Control
+                  type="text"
+                  name={field.name}
+                  placeholder={"Please enter " + capitalize(field.name)}
+                  ref={register}
+                />
+              );
+              break;
+            case "integer":
+              inputUiInModal = (
+                <Form.Control
+                  type="number"
+                  name={field.name}
+                  placeholder={"Please enter " + capitalize(field.name)}
+                  ref={register}
+                />
+              );
+              break;
+            case "file":
+              inputUiInModal = (
+                <Form.Control
+                  type="file"
+                  name={field.name}
+                  placeholder={"Please enter " + capitalize(field.name)}
+                  ref={register}
+                />
+              );
+              break;
+            default:
+              inputUiInModal = (
+                <Form.Control
+                  type="text"
+                  name={field.name + "." + field.name} // This cast the value to "object"
+                  placeholder={"Please enter " + capitalize(field.name)}
+                  ref={register}
+                />
+              );
+              break;
+          }
           return (
             <Form.Group
-              key={`${field.name}_{indx}`}
+              key={`${field.name}_${indx}`}
               as={Row}
-              controlId={`${field.name}_{indx}`}
+              controlId={`${field.name}_${indx}`}
             >
               <Col>
                 <FormLabel> {capitalize(field.name)}</FormLabel>
               </Col>
               <Col>
-                <Form.Control
-                  type={field.type}
-                  name={field.name}
-                  placeholder={capitalize(field.name)}
-                  ref={register}
-                />
+                {/* <Form.Control 
+              //   type={field.type}
+              //   name={field.name}
+              //   placeholder={capitalize(field.name)}
+              //   ref={register}
+              // /> */}
+                {inputUiInModal}
               </Col>
             </Form.Group>
           );
@@ -188,6 +412,7 @@ const CreateComponents = ({ specsJson }) => {
       setFormInModal(arrayOfFiledsElements);
     }
   };
+
   //TODO: fix async to reset before changing to another item
   //TODO: fix coloumns in other menu items
   // to inizialize the index of the item in navbar and reset the response

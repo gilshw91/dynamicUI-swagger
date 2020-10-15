@@ -36,12 +36,12 @@ const GenerateView = ({
 
   const currentService = menuItems[selectedMenuItemIndex];
 
-  const displayPostButtons = displayPostOptionsArray?.map((opt) => (
+  const displayPostButtons = displayPostOptionsArray?.map((opt, index) => (
     <React.Fragment key={opt}>
       <Button
         onClick={() => {
           toggle();
-          OnPostOptionClicked(opt);
+          OnPostOptionClicked(opt, index);
         }}
       >
         {capitalize(opt)}
@@ -82,7 +82,7 @@ const GenerateView = ({
     }
   });
   return (
-    <div>
+    <React.Fragment>
       <div className="generated-app-header">
         <h3>{appInfo.title}</h3>
         <p>Version {appInfo.version}</p>
@@ -162,7 +162,7 @@ const GenerateView = ({
           </p>
         )}
       </div>
-    </div>
+    </React.Fragment>
   );
 };
 

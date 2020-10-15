@@ -5,9 +5,13 @@ import { Nav, Navbar } from "react-bootstrap";
 const NavBar = ({ menuItems, selectedIndex, onItemClick }) => {
   return (
     <Navbar bg="dark" variant="dark">
-      <Nav className="mr-auto">
+      <Nav activeKey={menuItems[selectedIndex]} className="mr-auto">
         {menuItems.map((menuItem, idx) => (
-          <Nav.Link key={menuItem} onClick={() => onItemClick(idx)}>
+          <Nav.Link
+            key={menuItem}
+            eventKey={menuItem}
+            onClick={() => onItemClick(idx)}
+          >
             {menuItem}
           </Nav.Link>
         ))}

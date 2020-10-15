@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 
 export const useFetch = (
   url,
-  options = { headers: { Accept: "application/json" } }
+  options = {
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+  }
 ) => {
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
