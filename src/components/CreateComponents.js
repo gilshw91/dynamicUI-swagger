@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import GenerateView from "./GenerateView";
 import { useFetch } from "../hooks/useFetch";
-import { capitalize } from "../utils";
+import { capitalize, getObjectType } from "../utils";
 import useModal from "./shared/useModal";
 import { Button, Form, FormLabel, Row, Col } from "react-bootstrap";
 import "./CreateComponents.css";
@@ -14,11 +14,16 @@ const CreateComponents = ({ specsJson }) => {
   const [selectedDefinitionIndex, setSelectedDefinitionIndex] = useState(0);
   // array of filters options exists in the api
   const [displayFilters, setDisplayFilters] = useState([]);
-  // the data that is fetched from the given url
-  const [fetchURL, setFetchRequest] = useState("");
-  const [fetchOptions, setFetchOptions] = useState({});
-  // using useFetch hook to get response from url
-  const fetchResponse = useFetch(fetchURL, fetchOptions);
+  // using useFetch hook to get the data from url
+  const [{ data, error, loading }, callApi] = useFetch();
+  // handle opening and closing the Modal component
+  const { isShowing, toggle } = useModal();
+  //displays fields in modal due to the option which has clicked to post
+  const [formInModal, setFormInModal] = useState(
+    <div> There is no Fields to show</div>
+  );
+  // handle forms values using react-hook-form
+  const { register, handleSubmit } = useForm();
 
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
@@ -77,53 +82,34 @@ const CreateComponents = ({ specsJson }) => {
   const serviceEndpointsWithPostOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("post")
   );
-  // gets all endpoints with 'put' method
-  const serviceEndpointsWithPutOption = currentServiceEndpoints.filter((ep) =>
+  // true if there is "put" methods in the current servuce endpoint (gets all endpoints with 'put' methods if exists)
+  const isPutInService = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("put")
   );
-  // gets all endpoints with 'delete' method
-  const serviceEndpointsWithDeleteOption = currentServiceEndpoints.filter(
-    (ep) => Object.keys(ep[1]).includes("delete")
-  );
-  //handle Modal
-  const { isShowing, toggle } = useModal();
-
-  //displays fields in modal due to the option which has clicked to post
-  const [formInModal, setFormInModal] = useState(
-    <div> There is no Fields to show</div>
+  // true if there is "delete" methods in the current service endpoint (gets all endpoints with 'delete' methods if exists)
+  const isDeleteInService = currentServiceEndpoints.filter((ep) =>
+    Object.keys(ep[1]).includes("delete")
   );
 
-  const { register, handleSubmit } = useForm();
-  const [dataToPost, setDataToPost] = useState({});
-
-  //TODO: fix post request, and submiit tasot only after response 200 returns
   const handleSubmitInModal = (data) => {
     console.log("data", data);
-    toggle();
-    notifySubmit();
-    let valuesToPost = {};
-    Object.keys(data).forEach((key) => {
-      valuesToPost[key] = data[key];
-    });
-    setDataToPost(valuesToPost);
     const currentServiceLowerCase = currentService.toLowerCase();
-    // console.log("url", baseApiUrl + "/" + currentServiceEndpoints);
-    setFetchRequest(`${baseApiUrl}/${currentServiceLowerCase}`);
-    setFetchOptions({
+    callApi(`${baseApiUrl}/${currentServiceLowerCase}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(dataToPost),
+      body: JSON.stringify(data),
+    }).then(() => {
+      toggle();
+      notifySubmit();
+      console.log("post completed");
     });
   };
   // TODO: be able to change the title of the modal
   const handlePostOptionClicked = (option, indexOfOption) => {
-    // let arrayOfFields = []; //TODO: maybe an object to save the type also
-    // const optionData = serviceEndpointsWithPostOption.find(
-    //   (opt) => opt[1].post.operationId === option
-    // );
+    toggle(); //to open the modal when the button clicked
     const optionData = serviceEndpointsWithPostOption[indexOfOption];
     let arrayOfFiledsElements = [];
     if (Object.keys(optionData[1].post.parameters[0]).includes("schema")) {
@@ -163,7 +149,6 @@ const CreateComponents = ({ specsJson }) => {
                   />
                 );
               } else {
-                //  if (fullRef.properties[field].items.$ref) {
                 tempRef = fullRef.properties[field].items.$ref
                   .replace("#/definitions", "")
                   .replace("/", "");
@@ -204,8 +189,7 @@ const CreateComponents = ({ specsJson }) => {
 
             case "string":
               // if there is a list of options:
-              //TODO: handle with string, date-time like in store/order
-              //TODO: fix post data of the enum (like in store- not saved)
+              //TODO: handle with string, date-time like in store/order endpoint
               if (fullRef.properties[field].enum) {
                 inputUiInModal = [];
                 fullRef.properties[field].enum.forEach((item) => {
@@ -233,7 +217,9 @@ const CreateComponents = ({ specsJson }) => {
                   type="number"
                   name={field}
                   placeholder={"Please enter " + capitalize(field)}
-                  ref={register}
+                  ref={register({
+                    trnsformValue: (value) => parseFloat(value),
+                  })}
                 />
               );
               break;
@@ -249,10 +235,10 @@ const CreateComponents = ({ specsJson }) => {
               break;
             case "boolean":
               inputUiInModal = [
-                <option key={`${field}_false`} name="false">
+                <option key={`${field}_false`} value={Boolean(false)}>
                   False
                 </option>,
-                <option key={`${field}_true`} name="true">
+                <option key={`${field}_true`} value={Boolean(true)}>
                   True
                 </option>,
               ];
@@ -318,7 +304,9 @@ const CreateComponents = ({ specsJson }) => {
               </Col>
               <Col>
                 {Array.isArray(inputUiInModal) ? (
-                  <Form.Control as="select">{inputUiInModal}</Form.Control>
+                  <Form.Control as="select" name={field} ref={register}>
+                    {inputUiInModal}
+                  </Form.Control>
                 ) : (
                   inputUiInModal
                 )}
@@ -329,8 +317,6 @@ const CreateComponents = ({ specsJson }) => {
       ];
       setFormInModal(arrayOfFiledsElements);
     } else {
-      // <div key={`${opt}_form`>
-
       arrayOfFiledsElements = [
         ...arrayOfFiledsElements,
         optionData[1].post.parameters.map((field, indx) => {
@@ -362,7 +348,9 @@ const CreateComponents = ({ specsJson }) => {
                   type="number"
                   name={field.name}
                   placeholder={"Please enter " + capitalize(field.name)}
-                  ref={register}
+                  ref={register({
+                    trnsformValue: (value) => parseFloat(value),
+                  })}
                 />
               );
               break;
@@ -396,15 +384,7 @@ const CreateComponents = ({ specsJson }) => {
               <Col>
                 <FormLabel> {capitalize(field.name)}</FormLabel>
               </Col>
-              <Col>
-                {/* <Form.Control 
-              //   type={field.type}
-              //   name={field.name}
-              //   placeholder={capitalize(field.name)}
-              //   ref={register}
-              // /> */}
-                {inputUiInModal}
-              </Col>
+              <Col>{inputUiInModal}</Col>
             </Form.Group>
           );
         }),
@@ -413,12 +393,11 @@ const CreateComponents = ({ specsJson }) => {
     }
   };
 
-  //TODO: fix async to reset before changing to another item
   //TODO: fix coloumns in other menu items
   // to inizialize the index of the item in navbar and reset the response
   const handleMenuItemClick = (index) => {
     setSelectedDefinitionIndex(index);
-    setFetchRequest("");
+    callApi(null);
   };
   // handle on changing input in the filters
   const handleInputChange = (e) => {
@@ -446,14 +425,15 @@ const CreateComponents = ({ specsJson }) => {
     setDisplayFilters(newDisplayFilters);
     // handle the case which has no value inserted- reset response
     if (!value) {
-      setFetchRequest("");
+      callApi(null);
       return;
     }
     // handle and get the data by the inserted value
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
+    //TODO: problem when typing id in "store"
     switch (endpoint[1].get.parameters[0].in) {
       case "query":
-        setFetchRequest(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
+        callApi(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
         break;
       case "path":
         const inputVarName = endpoint[1].get.parameters[0].name;
@@ -461,7 +441,7 @@ const CreateComponents = ({ specsJson }) => {
           .replace(inputVarName, value)
           .replace("{", "")
           .replace("}", "");
-        setFetchRequest(`${baseApiUrl}${reqUrl}`);
+        callApi(`${baseApiUrl}${reqUrl}`);
         break;
       //TODO: alert if the case is the default
       default:
@@ -524,57 +504,22 @@ const CreateComponents = ({ specsJson }) => {
     ];
   });
 
-  if (fetchResponse?.response && !Array.isArray(fetchResponse.response)) {
-    tableData = (
-      <tr>
-        {Object.entries(fetchResponse.response).map((entry, index) => {
-          const keyName = entry[0];
-          const keyValue = entry[1];
+  // assigning items into array
+  switch (getObjectType(data)) {
+    case "array":
+      tableData.push(...data);
+      break;
 
-          return (
-            <td key={`${keyName}_row_${index}`}>
-              {Array.isArray(keyValue)
-                ? keyValue.join()
-                : typeof keyValue === "object"
-                ? Object.entries(keyValue).join()
-                : keyValue}
-            </td>
-          );
-        })}
-      </tr>
-    );
-  } else {
-    tableData = fetchResponse?.response?.map((r, idx) => (
-      <React.Fragment key={idx}>
-        <tr>
-          {tableColumns?.map((c) => {
-            switch (typeof r[c]) {
-              case "object":
-                //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
-                return (
-                  <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>
-                );
+    case "object":
+      tableData.push(data);
+      break;
 
-              case "array":
-                //TODO: check if the array contains data (to avoid `[object, object]`)
-                return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
-
-              default:
-                return <td key={`${c}_${idx}`}>{r[c]}</td>;
-            }
-          })}
-          <td className="actions-buttons-wrapper">
-            {serviceEndpointsWithPutOption ? (
-              <Button variant="warning">Edit</Button>
-            ) : null}
-            {serviceEndpointsWithDeleteOption ? (
-              <Button variant="danger">Delete</Button>
-            ) : null}
-          </td>
-        </tr>
-      </React.Fragment>
-    ));
+    default:
+      console.log("unsupported object type");
+    //TODO: FIX=>throwing error is raising an error... (shocking)
+    // throw new Error("unsupported object type");
   }
+  //end here
 
   React.useEffect(
     () => setDisplayFilters(displayFiltersArray),
@@ -590,13 +535,19 @@ const CreateComponents = ({ specsJson }) => {
     formInModal,
   };
 
+  const editDeleteButtons = {
+    isPutInService,
+    isDeleteInService,
+  };
+
   return (
     <GenerateView
       appInfo={specsJson.info}
       menuItems={services}
       selectedMenuItemIndex={selectedDefinitionIndex}
       uiObject={uiObject}
-      fetchResponse={fetchResponse}
+      editDeleteButtons={editDeleteButtons}
+      fetchResponse={{ data, error, loading }}
       onUiInputChange={handleInputChange}
       onMenuItemClick={handleMenuItemClick}
       OnPostOptionClicked={handlePostOptionClicked}

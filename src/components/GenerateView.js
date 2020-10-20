@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import PropTypes from "prop-types";
 import { Button, Form, Table, Badge } from "react-bootstrap";
 
@@ -8,7 +8,7 @@ import DropDownField from "./shared/DropDownField";
 import Modal from "./shared/Modal";
 import { ToastContainer } from "react-toastify";
 
-import { capitalize } from "../utils";
+import { capitalize, getObjectType } from "../utils";
 
 import "./GenerateView.css";
 
@@ -19,34 +19,34 @@ const GenerateView = ({
   uiObject,
   fetchResponse,
   onUiInputChange,
+  editDeleteButtons,
   onMenuItemClick,
   OnPostOptionClicked,
   onSubmit,
-  toggle, //TODO:still need it?
+  toggle, //TODO:still need it? maybe replace
   isShowing,
 }) => {
-  const { response, loading, error } = fetchResponse;
+  const { data, loading, error } = fetchResponse;
   const {
     displayFilters,
     tableColumns,
-    tableData,
+    tableData: tableDataArray,
     displayPostOptionsArray,
     formInModal,
   } = uiObject;
 
+  const { isPutInService, isDeleteInService } = editDeleteButtons;
   const currentService = menuItems[selectedMenuItemIndex];
 
   const displayPostButtons = displayPostOptionsArray?.map((opt, index) => (
-    <React.Fragment key={opt}>
-      <Button
-        onClick={() => {
-          toggle();
-          OnPostOptionClicked(opt, index);
-        }}
-      >
-        {capitalize(opt)}
-      </Button>
-    </React.Fragment>
+    <Button
+      key={opt}
+      onClick={() => {
+        OnPostOptionClicked(opt, index);
+      }}
+    >
+      {capitalize(opt)}
+    </Button>
   ));
 
   const displayFiltersInputs = displayFilters?.map((f, index) => {
@@ -81,8 +81,33 @@ const GenerateView = ({
       );
     }
   });
+
+  const tableData = tableDataArray?.map((r, idx) => (
+    <Fragment key={idx}>
+      <tr>
+        {tableColumns?.map((c) => {
+          switch (getObjectType(r[c])) {
+            case "object":
+              //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
+              return <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>;
+
+            case "array":
+              //TODO: check if the array contains data (to avoid `[object, object]`)
+              return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
+
+            default:
+              return <td key={`${c}_${idx}`}>{r[c]}</td>;
+          }
+        })}
+        <td className="actions-buttons-wrapper">
+          {isPutInService ? <Button variant="warning">Edit</Button> : null}
+          {isDeleteInService ? <Button variant="danger">Delete</Button> : null}
+        </td>
+      </tr>
+    </Fragment>
+  ));
   return (
-    <React.Fragment>
+    <Fragment>
       <div className="generated-app-header">
         <h3>{appInfo.title}</h3>
         <p>Version {appInfo.version}</p>
@@ -102,46 +127,14 @@ const GenerateView = ({
         {loading ? (
           <div>Loading...</div>
         ) : error ? (
-          //TODO: I have cheated here...
-          // (error === "undefined [404]") | (error === "undefined [405]") ? (
-          // <p>
-          //   <i>No records to show</i>
-          // </p>
-          // ) : (
-          //   <div>Error: {error}</div>
-          // )
           <div>Error: {error}</div>
-        ) : response ? (
-          Array.isArray(response) ? (
-            response.length ? (
-              <React.Fragment>
-                <br />
-                <h4>
-                  {currentService}{" "}
-                  <Badge variant="secondary">{response.length}</Badge>
-                </h4>
-                <Table striped bordered hover variant="dark">
-                  <thead>
-                    <tr>
-                      {tableColumns.map((column) => (
-                        <th key={column}>{capitalize(column)}</th>
-                      ))}
-                      <th key="action">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>{tableData}</tbody>
-                </Table>
-              </React.Fragment>
-            ) : (
-              <p>
-                <i>No records to show</i>
-              </p>
-            )
-          ) : (
-            <React.Fragment>
+        ) : data ? (
+          tableData.length ? (
+            <Fragment>
               <br />
               <h4>
-                {currentService} <Badge variant="secondary">{1}</Badge>
+                {currentService}{" "}
+                <Badge variant="secondary">{data.length}</Badge>
               </h4>
               <Table striped bordered hover variant="dark">
                 <thead>
@@ -154,7 +147,11 @@ const GenerateView = ({
                 </thead>
                 <tbody>{tableData}</tbody>
               </Table>
-            </React.Fragment>
+            </Fragment>
+          ) : (
+            <p>
+              <i>No records to show</i>
+            </p>
           )
         ) : (
           <p>
@@ -162,7 +159,7 @@ const GenerateView = ({
           </p>
         )}
       </div>
-    </React.Fragment>
+    </Fragment>
   );
 };
 
@@ -171,9 +168,12 @@ GenerateView.propTypes = {
   menuItems: PropTypes.array.isRequired,
   selectedMenuItemIndex: PropTypes.number.isRequired,
   uiObject: PropTypes.object.isRequired,
+  editDeleteButtons: PropTypes.object.isRequired,
   fetchResponse: PropTypes.object.isRequired,
   onUiInputChange: PropTypes.func.isRequired,
   onMenuItemClick: PropTypes.func.isRequired,
+  OnPostOptionClicked: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
   toggle: PropTypes.func.isRequired,
   isShowing: PropTypes.bool.isRequired,
 };

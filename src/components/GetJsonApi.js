@@ -7,14 +7,13 @@ import { useFetch } from "../hooks/useFetch";
 //import { mockData } from '../mockData';
 
 const GetJsonApi = ({ specsApiUrl }) => {
-  const { response, loading, error } = useFetch(specsApiUrl);
-
+  const [{ data, loading, error }] = useFetch(specsApiUrl);
   return loading ? (
     <div>Loading...</div>
   ) : error ? (
     <div>Fetch failed: {error}</div>
   ) : (
-    response && <CreateComponents specsJson={response} />
+    data && <CreateComponents specsJson={data} />
   );
 };
 
