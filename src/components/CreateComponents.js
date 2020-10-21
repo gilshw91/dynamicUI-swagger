@@ -3,10 +3,9 @@ import PropTypes from "prop-types";
 import GenerateView from "./GenerateView";
 import { useFetch } from "../hooks/useFetch";
 import { capitalize, getObjectType } from "../utils";
-import useModal from "./shared/useModal";
-import { Button, Form, FormLabel, Row, Col } from "react-bootstrap";
+import { Form, FormLabel, Row, Col } from "react-bootstrap";
 import "./CreateComponents.css";
-import { notifySubmit } from "./shared/toastify";
+import { notifySubmit, notifyDelete, notifyError } from "./shared/toastify";
 import { useForm } from "react-hook-form";
 
 const CreateComponents = ({ specsJson }) => {
@@ -16,19 +15,18 @@ const CreateComponents = ({ specsJson }) => {
   const [displayFilters, setDisplayFilters] = useState([]);
   // using useFetch hook to get the data from url
   const [{ data, error, loading }, callApi] = useFetch();
-  // handle opening and closing the Modal component
-  const { isShowing, toggle } = useModal();
   //displays fields in modal due to the option which has clicked to post
   const [formInModal, setFormInModal] = useState(
     <div> There is no Fields to show</div>
   );
   // handle forms values using react-hook-form
   const { register, handleSubmit } = useForm();
-
+  // control the Modal to be displayed
+  const [openPopupDialog, setOpenPopupDialog] = useState(false);
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
   // contain the samples data as the rows of the table
-  let tableData = [];
+  let tableDataArray = [];
   // contain the data of the filters type (name, type, (option), value etc..)
   let displayFiltersArray = [];
 
@@ -87,40 +85,33 @@ const CreateComponents = ({ specsJson }) => {
     Object.keys(ep[1]).includes("put")
   );
   // true if there is "delete" methods in the current service endpoint (gets all endpoints with 'delete' methods if exists)
-  const isDeleteInService = currentServiceEndpoints.filter((ep) =>
-    Object.keys(ep[1]).includes("delete")
-  );
+  const isDeleteInService = currentServiceEndpoints.filter(
+    (ep) => Object.keys(ep[1]).includes("delete") // Assuming that each service has only oine "delete" method
+  )[0];
 
-  const handleSubmitInModal = (data) => {
-    console.log("data", data);
-    const currentServiceLowerCase = currentService.toLowerCase();
-    callApi(`${baseApiUrl}/${currentServiceLowerCase}`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }).then(() => {
-      toggle();
-      notifySubmit();
-      console.log("post completed");
-    });
-  };
-  // TODO: be able to change the title of the modal
-  const handlePostOptionClicked = (option, indexOfOption) => {
-    toggle(); //to open the modal when the button clicked
-    const optionData = serviceEndpointsWithPostOption[indexOfOption];
+  const extractFieldsFromDefinitions = (
+    optionData,
+    initialValues = {},
+    method = "post"
+  ) => {
+    if (!optionData) {
+      console.log("optionData is null");
+      notifyError();
+      return;
+    }
+    setOpenPopupDialog(true);
     let arrayOfFiledsElements = [];
-    if (Object.keys(optionData[1].post.parameters[0]).includes("schema")) {
+    if (Object.keys(optionData[1][method].parameters[0]).includes("schema")) {
       let refInSwagger;
       // if the body is an array, 'schema' will be placed within "items"
       if (
-        Object.keys(optionData[1].post.parameters[0].schema).includes("items")
+        Object.keys(optionData[1][method].parameters[0].schema).includes(
+          "items"
+        )
       ) {
-        refInSwagger = optionData[1].post.parameters[0].schema.items.$ref;
+        refInSwagger = optionData[1][method].parameters[0].schema.items.$ref;
       } else {
-        refInSwagger = optionData[1].post.parameters[0].schema.$ref;
+        refInSwagger = optionData[1][method].parameters[0].schema.$ref;
       }
       const ref = refInSwagger
         .replace("#/definitions", "") //TODO: need to fix this? or its ok to replace the 'definitions'?
@@ -146,6 +137,7 @@ const CreateComponents = ({ specsJson }) => {
                     name={field + "[0]"} // This cast the value to "array"
                     placeholder={"Please separate by comma"}
                     ref={register}
+                    defaultValue={initialValues[field]}
                   />
                 );
               } else {
@@ -200,15 +192,17 @@ const CreateComponents = ({ specsJson }) => {
                     </option>,
                   ];
                 });
-              } else
+              } else {
                 inputUiInModal = (
                   <Form.Control
                     type="text"
                     name={field}
                     placeholder={"Please enter " + capitalize(field)}
                     ref={register}
+                    defaultValue={initialValues[field]}
                   />
                 );
+              }
 
               break;
             case "integer":
@@ -217,6 +211,7 @@ const CreateComponents = ({ specsJson }) => {
                   type="number"
                   name={field}
                   placeholder={"Please enter " + capitalize(field)}
+                  defaultValue={initialValues[field]}
                   ref={register({
                     trnsformValue: (value) => parseFloat(value),
                   })}
@@ -304,7 +299,12 @@ const CreateComponents = ({ specsJson }) => {
               </Col>
               <Col>
                 {Array.isArray(inputUiInModal) ? (
-                  <Form.Control as="select" name={field} ref={register}>
+                  <Form.Control
+                    as="select"
+                    name={field}
+                    ref={register}
+                    defaultValue={initialValues[field]}
+                  >
                     {inputUiInModal}
                   </Form.Control>
                 ) : (
@@ -391,6 +391,63 @@ const CreateComponents = ({ specsJson }) => {
       ];
       setFormInModal(arrayOfFiledsElements);
     }
+  };
+
+  const handleEditClicked = (index, data) => {
+    const row = tableDataArray[index];
+    const optionData = isPutInService[0];
+    extractFieldsFromDefinitions(optionData, row, "put");
+  };
+
+  const handleDeleteClicked = (index) => {
+    const row = tableDataArray[index];
+    const identifier = Object.keys(row)[0];
+    const reqPath = isDeleteInService[0];
+    const idValue = row[identifier];
+    const startIndex = reqPath.indexOf("{");
+    const endIndex = reqPath.indexOf("}");
+    const identifierTerm = reqPath.substring(startIndex + 1, endIndex);
+
+    const reqPathToSend = reqPath.replace("{" + identifierTerm + "}", idValue);
+    callApi(`${baseApiUrl}${reqPathToSend}`, { method: "DELETE" }).then(() => {
+      notifyDelete();
+
+      // reset the table
+      callApi(null);
+
+      // reset all filters value
+      let newDisplayFilters = [...displayFilters];
+      let i;
+      for (i = 0; i < newDisplayFilters.length; i++) {
+        newDisplayFilters[i] = {
+          ...newDisplayFilters[i],
+          value: "",
+        };
+      }
+
+      setDisplayFilters(newDisplayFilters);
+    });
+  };
+
+  const handleSubmitInModal = (data) => {
+    callApi(`${baseApiUrl}/${currentService.toLowerCase()}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }).then(() => {
+      setOpenPopupDialog((prevState) => !prevState);
+      notifySubmit();
+      console.log("post completed");
+    });
+  };
+
+  // TODO: be able to change the title of the modal
+  const handlePostOptionClicked = (indexOfOption) => {
+    const optionData = serviceEndpointsWithPostOption[indexOfOption];
+    extractFieldsFromDefinitions(optionData);
   };
 
   //TODO: fix coloumns in other menu items
@@ -505,19 +562,19 @@ const CreateComponents = ({ specsJson }) => {
   });
 
   // assigning items into array
-  switch (getObjectType(data)) {
-    case "array":
-      tableData.push(...data);
-      break;
+  if (data) {
+    switch (getObjectType(data)) {
+      case "array":
+        tableDataArray.push(...data);
+        break;
 
-    case "object":
-      tableData.push(data);
-      break;
+      case "object":
+        tableDataArray.push(data);
+        break;
 
-    default:
-      console.log("unsupported object type");
-    //TODO: FIX=>throwing error is raising an error... (shocking)
-    // throw new Error("unsupported object type");
+      default:
+        throw new Error("unsupported object type");
+    }
   }
   //end here
 
@@ -530,7 +587,7 @@ const CreateComponents = ({ specsJson }) => {
   const uiObject = {
     displayFilters,
     tableColumns,
-    tableData,
+    tableDataArray,
     displayPostOptionsArray,
     formInModal,
   };
@@ -550,10 +607,12 @@ const CreateComponents = ({ specsJson }) => {
       fetchResponse={{ data, error, loading }}
       onUiInputChange={handleInputChange}
       onMenuItemClick={handleMenuItemClick}
-      OnPostOptionClicked={handlePostOptionClicked}
+      onPostOptionClicked={handlePostOptionClicked}
       onSubmit={handleSubmit(handleSubmitInModal)}
-      toggle={toggle}
-      isShowing={isShowing}
+      onEditClicked={handleEditClicked}
+      onDeleteClicked={handleDeleteClicked}
+      onTogglePopupDialog={() => setOpenPopupDialog((prevState) => !prevState)}
+      openPopupDialog={openPopupDialog}
     />
   );
 };

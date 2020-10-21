@@ -6,9 +6,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
 
 ReactDOM.render(
-  //TODO: the StrictMode has raised a warning
   // <React.StrictMode>
-  <App />,
+  //   <App />,
   // </React.StrictMode>,
+  <App />,
   document.getElementById("root")
 );

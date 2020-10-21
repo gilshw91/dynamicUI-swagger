@@ -5,7 +5,7 @@ import { Button, Form, Table, Badge } from "react-bootstrap";
 import NavBar from "./shared/NavBar";
 import TextField from "./shared/TextField";
 import DropDownField from "./shared/DropDownField";
-import Modal from "./shared/Modal";
+import PopupDialog from "./shared/PopupDialog";
 import { ToastContainer } from "react-toastify";
 
 import { capitalize, getObjectType } from "../utils";
@@ -21,16 +21,18 @@ const GenerateView = ({
   onUiInputChange,
   editDeleteButtons,
   onMenuItemClick,
-  OnPostOptionClicked,
+  onPostOptionClicked,
   onSubmit,
-  toggle, //TODO:still need it? maybe replace
-  isShowing,
+  onEditClicked,
+  onDeleteClicked,
+  onTogglePopupDialog,
+  openPopupDialog,
 }) => {
   const { data, loading, error } = fetchResponse;
   const {
     displayFilters,
     tableColumns,
-    tableData: tableDataArray,
+    tableDataArray,
     displayPostOptionsArray,
     formInModal,
   } = uiObject;
@@ -42,7 +44,7 @@ const GenerateView = ({
     <Button
       key={opt}
       onClick={() => {
-        OnPostOptionClicked(opt, index);
+        onPostOptionClicked(index);
       }}
     >
       {capitalize(opt)}
@@ -100,14 +102,29 @@ const GenerateView = ({
           }
         })}
         <td className="actions-buttons-wrapper">
-          {isPutInService ? <Button variant="warning">Edit</Button> : null}
-          {isDeleteInService ? <Button variant="danger">Delete</Button> : null}
+          {isPutInService ? (
+            <Button variant="warning" onClick={() => onEditClicked(idx)}>
+              Edit
+            </Button>
+          ) : null}
+          {isDeleteInService ? (
+            <Button variant="danger" onClick={() => onDeleteClicked(idx)}>
+              Delete
+            </Button>
+          ) : null}
         </td>
       </tr>
     </Fragment>
   ));
   return (
     <Fragment>
+      <PopupDialog
+        open={openPopupDialog}
+        onClose={onTogglePopupDialog}
+        onSaveClicked={onSubmit}
+      >
+        <Form>{formInModal}</Form>
+      </PopupDialog>
       <div className="generated-app-header">
         <h3>{appInfo.title}</h3>
         <p>Version {appInfo.version}</p>
@@ -119,40 +136,30 @@ const GenerateView = ({
       />
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
-        <Modal isShowing={isShowing} hide={toggle} onSubmit={onSubmit}>
-          <Form>{formInModal}</Form>
-        </Modal>
         <ToastContainer autoClose={3000} />
         <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (
           <div>Loading...</div>
         ) : error ? (
           <div>Error: {error}</div>
-        ) : data ? (
-          tableData.length ? (
-            <Fragment>
-              <br />
-              <h4>
-                {currentService}{" "}
-                <Badge variant="secondary">{data.length}</Badge>
-              </h4>
-              <Table striped bordered hover variant="dark">
-                <thead>
-                  <tr>
-                    {tableColumns.map((column) => (
-                      <th key={column}>{capitalize(column)}</th>
-                    ))}
-                    <th key="action">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>{tableData}</tbody>
-              </Table>
-            </Fragment>
-          ) : (
-            <p>
-              <i>No records to show</i>
-            </p>
-          )
+        ) : tableData && tableData.length > 0 ? (
+          <Fragment>
+            <br />
+            <h4>
+              {currentService} <Badge variant="secondary">{data.length}</Badge>
+            </h4>
+            <Table striped bordered hover variant="dark">
+              <thead>
+                <tr>
+                  {tableColumns.map((column) => (
+                    <th key={column}>{capitalize(column)}</th>
+                  ))}
+                  <th key="action">Actions</th>
+                </tr>
+              </thead>
+              <tbody>{tableData}</tbody>
+            </Table>
+          </Fragment>
         ) : (
           <p>
             <i>No records to show</i>
@@ -167,15 +174,17 @@ GenerateView.propTypes = {
   appInfo: PropTypes.object.isRequired,
   menuItems: PropTypes.array.isRequired,
   selectedMenuItemIndex: PropTypes.number.isRequired,
+  openPopupDialog: PropTypes.bool.isRequired,
   uiObject: PropTypes.object.isRequired,
   editDeleteButtons: PropTypes.object.isRequired,
   fetchResponse: PropTypes.object.isRequired,
   onUiInputChange: PropTypes.func.isRequired,
   onMenuItemClick: PropTypes.func.isRequired,
-  OnPostOptionClicked: PropTypes.func.isRequired,
+  onPostOptionClicked: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
-  toggle: PropTypes.func.isRequired,
-  isShowing: PropTypes.bool.isRequired,
+  onEditClicked: PropTypes.func.isRequired,
+  onDeleteClicked: PropTypes.func.isRequired,
+  onTogglePopupDialog: PropTypes.func.isRequired,
 };
 
 export default GenerateView;

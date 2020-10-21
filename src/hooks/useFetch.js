@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
 
-export const useFetch = (
-  url,
-  options = {
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-  }
-) => {
+export const useFetch = (url) => {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,9 +42,8 @@ export const useFetch = (
     }
   };
 
-  //TODO: fix this warning
   useEffect(() => {
-    if (url) callApi(url, options);
-  }, [JSON.stringify(options), url]);
+    if (url) callApi(url);
+  }, [url]);
   return [{ data, error, loading }, callApi];
 };
