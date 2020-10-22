@@ -5,7 +5,7 @@ import { useFetch } from "../hooks/useFetch";
 import { capitalize, getObjectType } from "../utils";
 import { Form, FormLabel, Row, Col } from "react-bootstrap";
 import "./CreateComponents.css";
-import { notifySubmit, notifyDelete, notifyError } from "./shared/toastify";
+import { notifySubmit, notifyDelete, notifyError } from "../toastify";
 import { useForm } from "react-hook-form";
 
 const CreateComponents = ({ specsJson }) => {
@@ -89,17 +89,18 @@ const CreateComponents = ({ specsJson }) => {
     (ep) => Object.keys(ep[1]).includes("delete") // Assuming that each service has only oine "delete" method
   )[0];
 
+  // this function analyzing each field type to dispaly in UI
   const extractFieldsFromDefinitions = (
     optionData,
     initialValues = {},
-    method = "post"
+    method = "post" //default method
   ) => {
     if (!optionData) {
       console.log("optionData is null");
       notifyError();
       return;
     }
-    setOpenPopupDialog(true);
+    setOpenPopupDialog(true); // open the popup dialog
     let arrayOfFiledsElements = [];
     if (Object.keys(optionData[1][method].parameters[0]).includes("schema")) {
       let refInSwagger;
@@ -130,13 +131,15 @@ const CreateComponents = ({ specsJson }) => {
                 inputUiInModal = (
                   <Form.Control
                     type={
-                      fullRef.properties[field].items.type === "string"
-                        ? "text"
-                        : "number"
+                      fullRef.properties[field].items.type === "integer"
+                        ? "number"
+                        : "text"
                     } // TODO: another switch
                     name={field + "[0]"} // This cast the value to "array"
                     placeholder={"Please separate by comma"}
-                    ref={register}
+                    ref={register({
+                      required: "Please fill out this field",
+                    })}
                     defaultValue={initialValues[field]}
                   />
                 );
@@ -149,7 +152,9 @@ const CreateComponents = ({ specsJson }) => {
                     key={field}
                     as={Col}
                     controlId={`${field}_${indx}`}
-                    ref={register}
+                    ref={register({
+                      required: "Please fill out this field",
+                    })}
                     name={field}
                   >
                     {Object.keys(specsJson.definitions[tempRef].properties).map(
@@ -160,15 +165,23 @@ const CreateComponents = ({ specsJson }) => {
                             type={
                               specsJson.definitions[tempRef].properties[
                                 subField
-                              ].type === "string"
-                                ? "text"
-                                : "number"
+                              ].type === "integer"
+                                ? "number"
+                                : "text"
                             }
                             name={[field + "[0]" + subField]} // This cast the value to object inside an array
                             placeholder={
                               capitalize(field) + "-" + capitalize(subField)
                             }
-                            ref={register}
+                            ref={register({
+                              required: "Please fill out this field",
+                            })}
+                            // separete between the post and put methods
+                            defaultValue={
+                              Object.keys(initialValues).length > 0
+                                ? initialValues[field][0][subField]
+                                : null
+                            }
                           />
                         );
                       }
@@ -198,7 +211,9 @@ const CreateComponents = ({ specsJson }) => {
                     type="text"
                     name={field}
                     placeholder={"Please enter " + capitalize(field)}
-                    ref={register}
+                    ref={register({
+                      required: "Please fill out this field",
+                    })}
                     defaultValue={initialValues[field]}
                   />
                 );
@@ -213,7 +228,7 @@ const CreateComponents = ({ specsJson }) => {
                   placeholder={"Please enter " + capitalize(field)}
                   defaultValue={initialValues[field]}
                   ref={register({
-                    trnsformValue: (value) => parseFloat(value),
+                    required: "Please fill out this field",
                   })}
                 />
               );
@@ -224,7 +239,9 @@ const CreateComponents = ({ specsJson }) => {
                   type="file"
                   name={field}
                   placeholder={"Please enter " + capitalize(field)}
-                  ref={register}
+                  ref={register({
+                    required: "Please fill out this field",
+                  })}
                 />
               );
               break;
@@ -253,7 +270,9 @@ const CreateComponents = ({ specsJson }) => {
                     key={field}
                     as={Col}
                     controlId={`${field}_${indx}`}
-                    ref={register}
+                    ref={register({
+                      required: "Please fill out this field",
+                    })}
                     name={field}
                   >
                     {Object.keys(fieldsOfObject.properties).map((subField) => {
@@ -270,7 +289,15 @@ const CreateComponents = ({ specsJson }) => {
                           placeholder={
                             capitalize(field) + "-" + capitalize(subField)
                           }
-                          ref={register}
+                          ref={register({
+                            required: "Required",
+                          })}
+                          // separate betwwen the post and the put methods.
+                          defaultValue={
+                            Object.keys(initialValues).length > 0
+                              ? initialValues[field][subField]
+                              : null
+                          }
                         />
                       );
                     })}
@@ -283,7 +310,9 @@ const CreateComponents = ({ specsJson }) => {
                     type="text"
                     name={field} //TODO: cast the value to "object"
                     placeholder={"Please enter " + capitalize(field)}
-                    ref={register}
+                    ref={register({
+                      required: "Required",
+                    })}
                   />
                 );
               }
@@ -302,7 +331,9 @@ const CreateComponents = ({ specsJson }) => {
                   <Form.Control
                     as="select"
                     name={field}
-                    ref={register}
+                    ref={register({
+                      required: "Required",
+                    })}
                     defaultValue={initialValues[field]}
                   >
                     {inputUiInModal}
@@ -328,7 +359,9 @@ const CreateComponents = ({ specsJson }) => {
                   type={field.type === "string" ? "text" : "number"} // TODO: another switch
                   name={field.name + "[0]"} // This cast the value to "array"
                   placeholder={"Please separate by comma"}
-                  ref={register}
+                  ref={register({
+                    required: "Required",
+                  })}
                 />
               );
               break;
@@ -338,7 +371,9 @@ const CreateComponents = ({ specsJson }) => {
                   type="text"
                   name={field.name}
                   placeholder={"Please enter " + capitalize(field.name)}
-                  ref={register}
+                  ref={register({
+                    required: "Required",
+                  })}
                 />
               );
               break;
@@ -349,7 +384,7 @@ const CreateComponents = ({ specsJson }) => {
                   name={field.name}
                   placeholder={"Please enter " + capitalize(field.name)}
                   ref={register({
-                    trnsformValue: (value) => parseFloat(value),
+                    required: "Required",
                   })}
                 />
               );
@@ -360,7 +395,9 @@ const CreateComponents = ({ specsJson }) => {
                   type="file"
                   name={field.name}
                   placeholder={"Please enter " + capitalize(field.name)}
-                  ref={register}
+                  ref={register({
+                    required: "Required",
+                  })}
                 />
               );
               break;
@@ -370,7 +407,9 @@ const CreateComponents = ({ specsJson }) => {
                   type="text"
                   name={field.name + "." + field.name} // This cast the value to "object"
                   placeholder={"Please enter " + capitalize(field.name)}
-                  ref={register}
+                  ref={register({
+                    required: "Required",
+                  })}
                 />
               );
               break;
@@ -393,9 +432,12 @@ const CreateComponents = ({ specsJson }) => {
     }
   };
 
-  const handleEditClicked = (index, data) => {
+  const handleEditClicked = (index) => {
+    // extract the current row where the button "edit" has clicked
     const row = tableDataArray[index];
+    // extract the current endpoint
     const optionData = isPutInService[0];
+    // function that display the fileds and analyze its type
     extractFieldsFromDefinitions(optionData, row, "put");
   };
 
