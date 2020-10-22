@@ -16,9 +16,7 @@ const CreateComponents = ({ specsJson }) => {
   // using useFetch hook to get the data from url
   const [{ data, error, loading }, callApi] = useFetch();
   //displays fields in modal due to the option which has clicked to post
-  const [formInModal, setFormInModal] = useState(
-    <div> There is no Fields to show</div>
-  );
+  const [formInModal, setFormInModal] = useState();
   // handle forms values using react-hook-form
   const { register, handleSubmit } = useForm();
   // control the Modal to be displayed
@@ -48,7 +46,7 @@ const CreateComponents = ({ specsJson }) => {
 
     return capitalize(serviceName);
   });
-  //TODO: this chuck returns 4 times. is it needed?
+
   // array that contains the unique paths which exists in the API
   const services = services_raw.filter(
     (value, index, array) => array.indexOf(value) === index
@@ -58,6 +56,7 @@ const CreateComponents = ({ specsJson }) => {
   // get definitions if exists
   const definitions = specsJson.definitions;
   const currentServiceDefinition = definitions[currentService];
+
   // if definitions exist- appending their name to the table as coloumns
   if (currentServiceDefinition) {
     const properties = currentServiceDefinition.properties;
@@ -76,6 +75,7 @@ const CreateComponents = ({ specsJson }) => {
   const serviceEndpointsWithGetOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("get")
   );
+
   // gets all endpoints with 'post' method
   const serviceEndpointsWithPostOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("post")
@@ -88,6 +88,23 @@ const CreateComponents = ({ specsJson }) => {
   const isDeleteInService = currentServiceEndpoints.filter(
     (ep) => Object.keys(ep[1]).includes("delete") // Assuming that each service has only oine "delete" method
   )[0];
+
+  serviceEndpointsWithGetOption &&
+    serviceEndpointsWithGetOption.forEach((ep) => {
+      //TODO: improve this 'if'
+      // this if is to handle the case of the definitions of the endpoint is in a $ref of a service
+      if (
+        specsJson.paths[ep[0]].get.responses &&
+        specsJson.paths[ep[0]].get.responses[200] &&
+        specsJson.paths[ep[0]].get.responses[200].schema &&
+        specsJson.paths[ep[0]].get.responses[200].schema.$ref
+      ) {
+        const refOfDefintion = specsJson.paths[
+          ep[0]
+        ].get.responses[200].schema.$ref.replace("#/definitions/", "");
+        tableColumns = Object.keys(definitions[refOfDefintion].properties);
+      }
+    });
 
   // this function analyzing each field type to dispaly in UI
   const extractFieldsFromDefinitions = (
@@ -115,11 +132,12 @@ const CreateComponents = ({ specsJson }) => {
         refInSwagger = optionData[1][method].parameters[0].schema.$ref;
       }
       const ref = refInSwagger
-        .replace("#/definitions", "") //TODO: need to fix this? or its ok to replace the 'definitions'?
+        .replace("#/definitions", "") //TODO: need to fix this hadle with the definition?
         .replace("/", "");
 
       const fullRef = specsJson.definitions[ref];
       const refProperties = Object.keys(fullRef.properties);
+
       let inputUiInModal;
       let tempRef;
       arrayOfFiledsElements = [
@@ -138,7 +156,7 @@ const CreateComponents = ({ specsJson }) => {
                     name={field + "[0]"} // This cast the value to "array"
                     placeholder={"Please separate by comma"}
                     ref={register({
-                      required: "Please fill out this field",
+                      required: "Required",
                     })}
                     defaultValue={initialValues[field]}
                   />
@@ -153,7 +171,7 @@ const CreateComponents = ({ specsJson }) => {
                     as={Col}
                     controlId={`${field}_${indx}`}
                     ref={register({
-                      required: "Please fill out this field",
+                      required: "Required",
                     })}
                     name={field}
                   >
@@ -174,7 +192,7 @@ const CreateComponents = ({ specsJson }) => {
                               capitalize(field) + "-" + capitalize(subField)
                             }
                             ref={register({
-                              required: "Please fill out this field",
+                              required: "Required",
                             })}
                             // separete between the post and put methods
                             defaultValue={
@@ -212,7 +230,7 @@ const CreateComponents = ({ specsJson }) => {
                     name={field}
                     placeholder={"Please enter " + capitalize(field)}
                     ref={register({
-                      required: "Please fill out this field",
+                      required: "Required",
                     })}
                     defaultValue={initialValues[field]}
                   />
@@ -228,7 +246,7 @@ const CreateComponents = ({ specsJson }) => {
                   placeholder={"Please enter " + capitalize(field)}
                   defaultValue={initialValues[field]}
                   ref={register({
-                    required: "Please fill out this field",
+                    required: "Required",
                   })}
                 />
               );
@@ -240,7 +258,7 @@ const CreateComponents = ({ specsJson }) => {
                   name={field}
                   placeholder={"Please enter " + capitalize(field)}
                   ref={register({
-                    required: "Please fill out this field",
+                    required: "Required",
                   })}
                 />
               );
@@ -271,7 +289,7 @@ const CreateComponents = ({ specsJson }) => {
                     as={Col}
                     controlId={`${field}_${indx}`}
                     ref={register({
-                      required: "Please fill out this field",
+                      required: "Required",
                     })}
                     name={field}
                   >
@@ -308,7 +326,7 @@ const CreateComponents = ({ specsJson }) => {
                 inputUiInModal = (
                   <Form.Control
                     type="text"
-                    name={field} //TODO: cast the value to "object"
+                    name={field}
                     placeholder={"Please enter " + capitalize(field)}
                     ref={register({
                       required: "Required",
@@ -350,7 +368,7 @@ const CreateComponents = ({ specsJson }) => {
     } else {
       arrayOfFiledsElements = [
         ...arrayOfFiledsElements,
-        optionData[1].post.parameters.map((field, indx) => {
+        optionData[1].method.parameters.map((field, indx) => {
           let inputUiInModal;
           switch (field.type) {
             case "array":
@@ -492,7 +510,6 @@ const CreateComponents = ({ specsJson }) => {
     extractFieldsFromDefinitions(optionData);
   };
 
-  //TODO: fix coloumns in other menu items
   // to inizialize the index of the item in navbar and reset the response
   const handleMenuItemClick = (index) => {
     setSelectedDefinitionIndex(index);
@@ -551,7 +568,6 @@ const CreateComponents = ({ specsJson }) => {
   // build 'get' fields to the UI
   serviceEndpointsWithGetOption.forEach((ep) => {
     const epParamsArray = ep[1].get.parameters;
-
     epParamsArray.forEach((epParams) => {
       switch (epParams.type) {
         case "integer":
@@ -561,8 +577,6 @@ const CreateComponents = ({ specsJson }) => {
               name: epParams.name,
               type: "number",
               value: "",
-              //TODO: epParams.maximum ? (maximum: epParams.maximum) : (maximum: ""),
-              //TODO: epParams.minimum ? (minimum: epParams.minimum) : (minimum: ""),
             },
           ];
           break;
@@ -576,7 +590,6 @@ const CreateComponents = ({ specsJson }) => {
               type: "array",
               options,
               value: "",
-              //TODO: epParams.items.default ? (value: epParams.items.default) : (value: ""),
             },
           ];
           break;

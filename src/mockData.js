@@ -1,148 +1,148 @@
 export const mockData = {
-  swagger: '2.0',
+  swagger: "2.0",
   info: {
-    description: 'This is the Customer API.',
-    version: '1.0.0',
-    title: 'Customer API',
+    description: "This is the Customer API.",
+    version: "1.0.0",
+    title: "Customer API",
     contact: {
-      name: 'Yoav Melamed',
-      url: 'http://www.yoav.com',
-      email: 'me@domain.com',
+      name: "Forrest Ghump",
+      url: "http://www.forrest.com",
+      email: "me@domain.com",
     },
     license: {
       name: "Apache '2.0'",
-      url: 'http://www.apache.com',
+      url: "http://www.apache.com",
     },
   },
-  host: 'api.globalmantics.com',
-  basePath: '/crm/v1',
-  schemes: ['http', 'https'],
+  host: "api.globalmantics.com",
+  basePath: "/crm/v1",
+  schemes: ["http", "https"],
   security: [
     {
       BasicAuth: [],
     },
   ],
   paths: {
-    '/customer': {
+    "/customer": {
       get: {
         summary: "reads a customer's data",
         description:
           "This operation provides a view of a customer's data in Json. The operation uses the customer id to identify the customer and a query string",
-        operationId: 'getCustomer',
-        produces: ['application/json'],
+        operationId: "getCustomer",
+        produces: ["application/json"],
         parameters: [
           {
-            name: 'customerId',
-            in: 'query',
-            description: 'pass an optional customer id',
+            name: "customerId",
+            in: "query",
+            description: "pass an optional customer id",
             required: true,
-            type: 'integer',
+            type: "integer",
           },
         ],
         responses: {
           200: {
-            description: 'search results matched',
+            description: "search results matched",
             schema: {
-              $ref: '#/definitions/Customer',
+              $ref: "#/definitions/Customer",
             },
           },
           404: {
-            description: 'employee with this id does not exist.',
+            description: "employee with this id does not exist.",
           },
         },
       },
       post: {
-        summary: 'adds a new customer',
-        description: 'Add a new customer to the system',
-        operationId: 'addCustomer',
-        consumes: ['application/json'],
-        produces: ['text/plain'],
+        summary: "adds a new customer",
+        description: "Add a new customer to the system",
+        operationId: "addCustomer",
+        consumes: ["application/json"],
+        produces: ["text/plain"],
         parameters: [
           {
-            in: 'body',
-            name: 'body',
-            description: 'the new customer data in JSON',
+            in: "body",
+            name: "body",
+            description: "the new customer data in JSON",
             required: true,
             schema: {
-              $ref: '#/definitions/Customer',
+              $ref: "#/definitions/Customer",
             },
           },
         ],
         responses: {
           200: {
-            description: 'successfull operation',
+            description: "successfull operation",
             schema: {
-              type: 'integer',
+              type: "integer",
             },
           },
           405: {
-            description: 'Invalid input',
+            description: "Invalid input",
           },
         },
       },
     },
-    '/customer/{customerId}': {
+    "/customer/{customerId}": {
       put: {
-        summary: 'update existing customer',
-        description: 'Updates an existing customer followed by Id',
-        operationId: 'updateCustomer',
-        consumes: ['application/json'],
+        summary: "update existing customer",
+        description: "Updates an existing customer followed by Id",
+        operationId: "updateCustomer",
+        consumes: ["application/json"],
         parameters: [
           {
-            in: 'body',
-            name: 'body',
-            description: 'the updated customer data in JSON',
+            in: "body",
+            name: "body",
+            description: "the updated customer data in JSON",
             required: true,
             schema: {
-              $ref: '#/definitions/Customer',
+              $ref: "#/definitions/Customer",
             },
           },
           {
-            name: 'customerId',
-            in: 'path',
-            description: 'the id of the customer to update',
+            name: "customerId",
+            in: "path",
+            description: "the id of the customer to update",
             required: true,
-            type: 'integer',
+            type: "integer",
           },
         ],
         responses: {
           200: {
-            description: 'Success.',
+            description: "Success.",
           },
           404: {
-            description: 'Customer not found.',
+            description: "Customer not found.",
           },
           500: {
-            description: 'Internal server error',
+            description: "Internal server error",
           },
         },
       },
       delete: {
-        summary: 'delete existing customer',
-        description: 'Delete an existing customer followed by Id',
-        operationId: 'deleteCustomer',
-        produces: ['application/json'],
+        summary: "delete existing customer",
+        description: "Delete an existing customer followed by Id",
+        operationId: "deleteCustomer",
+        produces: ["application/json"],
         parameters: [
           {
-            name: 'customerId',
-            in: 'path',
-            description: 'the id of the customer to delete',
+            name: "customerId",
+            in: "path",
+            description: "the id of the customer to delete",
             required: true,
-            type: 'integer',
+            type: "integer",
           },
         ],
         responses: {
           200: {
-            description: 'The customer was deleted',
+            description: "The customer was deleted",
             schema: {
-              $ref: '#/definitions/Customer',
+              $ref: "#/definitions/Customer",
             },
           },
           404: {
-            description: 'Customer not found.',
+            description: "Customer not found.",
           },
           500: {
-            description: 'Internal server error',
+            description: "Internal server error",
           },
         },
         security: [
@@ -155,55 +155,55 @@ export const mockData = {
   },
   securityDefinitions: {
     BasicAuth: {
-      type: 'basic',
+      type: "basic",
     },
   },
   definitions: {
     Customer: {
-      type: 'object',
+      type: "object",
       properties: {
         customerId: {
-          type: 'integer',
+          type: "integer",
         },
         accountValue: {
-          type: 'number',
+          type: "number",
         },
         active: {
-          type: 'boolean',
+          type: "boolean",
         },
         address: {
-          type: 'object',
+          type: "object",
           properties: {
             name: {
-              type: 'string',
+              type: "string",
             },
             street: {
-              type: 'string',
+              type: "string",
             },
             city: {
-              type: 'string',
+              type: "string",
             },
             state: {
-              type: 'string',
+              type: "string",
             },
             zip: {
-              type: 'string',
+              type: "string",
             },
           },
         },
         contacts: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
               name: {
-                type: 'string',
+                type: "string",
               },
               email: {
-                type: 'string',
+                type: "string",
               },
               phone: {
-                type: 'string',
+                type: "string",
               },
             },
           },

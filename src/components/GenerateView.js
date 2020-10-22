@@ -11,6 +11,7 @@ import { ToastContainer } from "react-toastify";
 import { capitalize, getObjectType } from "../utils";
 
 import "./GenerateView.css";
+import { get } from "react-hook-form";
 
 const GenerateView = ({
   appInfo,
@@ -50,7 +51,6 @@ const GenerateView = ({
       {capitalize(opt)}
     </Button>
   ));
-
   const displayFiltersInputs = displayFilters?.map((f, index) => {
     const name = f.name;
     const type = f.type ? f.type : "text";
@@ -90,11 +90,14 @@ const GenerateView = ({
         {tableColumns?.map((c) => {
           switch (getObjectType(r[c])) {
             case "object":
-              //TODO: needs to display subColoumns for the keys of the object? (id:, url:, name: ...)
               return <td key={`${c}_${idx}`}>{Object.entries(r[c]).join()}</td>;
 
             case "array":
-              //TODO: check if the array contains data (to avoid `[object, object]`)
+              if (getObjectType(r[c][0]) === "object") {
+                return (
+                  <td key={`${c}_${idx}`}>{Object.entries(r[c][0]).join()}</td>
+                );
+              }
               return <td key={`${c}_${idx}`}>{r[c].join()}</td>;
 
             default:
@@ -102,12 +105,12 @@ const GenerateView = ({
           }
         })}
         <td className="actions-buttons-wrapper">
-          {isPutInService ? (
+          {isPutInService.length > 0 ? (
             <Button variant="warning" onClick={() => onEditClicked(idx)}>
               Edit
             </Button>
           ) : null}
-          {isDeleteInService ? (
+          {isDeleteInService.length > 0 ? (
             <Button variant="danger" onClick={() => onDeleteClicked(idx)}>
               Delete
             </Button>
