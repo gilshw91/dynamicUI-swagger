@@ -1,16 +1,14 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import GenerateView from "./GenerateView";
+import RenderUI from "./RenderUI";
 import { useFetch } from "../hooks/useFetch";
 import { capitalize, getObjectType } from "../utils";
 import { Form, FormLabel, Row, Col } from "react-bootstrap";
-import "./CreateComponents.css";
+import "./MainComponent.css";
 import { notifySubmit, notifyDelete, notifyError } from "../toastify";
 import { useForm } from "react-hook-form";
 
-const CreateComponents = ({ specsJson }) => {
-  // the index of the current definition which has seleceted in the tab
-  const [selectedDefinitionIndex, setSelectedDefinitionIndex] = useState(0);
+const MainComponent = ({ serviceName, methodName, specsJson }) => {
   // array of filters options exists in the api
   const [displayFilters, setDisplayFilters] = useState([]);
   // using useFetch hook to get the data from url
@@ -18,9 +16,11 @@ const CreateComponents = ({ specsJson }) => {
   //displays fields in modal due to the option which has clicked to post
   const [formInModal, setFormInModal] = useState();
   // handle forms values using react-hook-form
-  const { register, handleSubmit } = useForm();
+  const { register, errors, handleSubmit } = useForm();
   // control the Modal to be displayed
   const [openPopupDialog, setOpenPopupDialog] = useState(false);
+  const [openDeletePopupDialog, setOpenDeletePopupDialog] = useState(false);
+  const [deleteObjectId, setDeleteObjectId] = useState(-1);
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
   // contain the samples data as the rows of the table
@@ -36,27 +36,16 @@ const CreateComponents = ({ specsJson }) => {
       : "http://"
     : "http://";
   const baseApiUrl = schema + host + basePath;
-  // mapping over the paths and slice the first char which is "/" and capitalize them
-  const services_raw = Object.keys(specsJson.paths).map((service) => {
-    const serviceNameWithoutSlash = service.substring(1);
-    const indx = serviceNameWithoutSlash.indexOf("/");
 
-    let serviceName = serviceNameWithoutSlash;
-    if (indx > 0) serviceName = serviceNameWithoutSlash.substring(0, indx);
-
-    return capitalize(serviceName);
-  });
-
-  // array that contains the unique paths which exists in the API
-  const services = services_raw.filter(
-    (value, index, array) => array.indexOf(value) === index
-  );
   // the name of the selected path
-  const currentService = services[selectedDefinitionIndex];
+  const currentPath = serviceName
+    .replace("$", "/")
+    .replace("%", "{")
+    .replace("%", "}");
+  const currentService = currentPath.split("/")[0];
   // get definitions if exists
   const definitions = specsJson.definitions;
-  const currentServiceDefinition = definitions[currentService];
-
+  const currentServiceDefinition = definitions[capitalize(currentService)];
   // if definitions exist- appending their name to the table as coloumns
   if (currentServiceDefinition) {
     const properties = currentServiceDefinition.properties;
@@ -67,25 +56,32 @@ const CreateComponents = ({ specsJson }) => {
   const endpoints = Object.entries(specsJson.paths);
 
   // gets all endpoints of the current service
-  const currentServiceEndpoints = endpoints.filter((ep) =>
-    ep[0].startsWith("/" + currentService.toLowerCase())
+  const currentServiceEndpoints = endpoints.filter(
+    (ep) => ep[0].toLowerCase() === "/" + currentPath.toLowerCase()
   );
 
+  //TODO: is this if is nessecary?
+  // if (methodName) {
+  //   const currentServiceMethodName = currentServiceEndpoints.filter((ep) =>
+  //     Object.keys(ep[1]).includes(methodName)
+  //   );
+  // }
+
   // gets all endpoints with 'get' method
-  const serviceEndpointsWithGetOption = currentServiceEndpoints.filter((ep) =>
+  let serviceEndpointsWithGetOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("get")
   );
 
   // gets all endpoints with 'post' method
-  const serviceEndpointsWithPostOption = currentServiceEndpoints.filter((ep) =>
+  let serviceEndpointsWithPostOption = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("post")
   );
   // true if there is "put" methods in the current servuce endpoint (gets all endpoints with 'put' methods if exists)
-  const isPutInService = currentServiceEndpoints.filter((ep) =>
+  let isPutInService = currentServiceEndpoints.filter((ep) =>
     Object.keys(ep[1]).includes("put")
   );
   // true if there is "delete" methods in the current service endpoint (gets all endpoints with 'delete' methods if exists)
-  const isDeleteInService = currentServiceEndpoints.filter(
+  let isDeleteInService = currentServiceEndpoints.filter(
     (ep) => Object.keys(ep[1]).includes("delete") // Assuming that each service has only oine "delete" method
   )[0];
 
@@ -194,7 +190,7 @@ const CreateComponents = ({ specsJson }) => {
                             ref={register({
                               required: "Required",
                             })}
-                            // separete between the post and put methods - handle with empty field
+                            // separete between the post and put methods
                             defaultValue={
                               Object.keys(initialValues).length > 0
                                 ? initialValues[field][0]
@@ -472,6 +468,8 @@ const CreateComponents = ({ specsJson }) => {
     const endIndex = reqPath.indexOf("}");
     const identifierTerm = reqPath.substring(startIndex + 1, endIndex);
 
+    setOpenDeletePopupDialog(false);
+
     const reqPathToSend = reqPath.replace("{" + identifierTerm + "}", idValue);
     callApi(`${baseApiUrl}${reqPathToSend}`, { method: "DELETE" }).then(() => {
       notifyDelete();
@@ -494,7 +492,7 @@ const CreateComponents = ({ specsJson }) => {
   };
 
   const handleSubmitInModal = (data) => {
-    callApi(`${baseApiUrl}/${currentService.toLowerCase()}`, {
+    callApi(`${baseApiUrl}/${currentPath.toLowerCase()}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -514,11 +512,6 @@ const CreateComponents = ({ specsJson }) => {
     extractFieldsFromDefinitions(optionData);
   };
 
-  // to inizialize the index of the item in navbar and reset the response
-  const handleMenuItemClick = (index) => {
-    setSelectedDefinitionIndex(index);
-    callApi(null);
-  };
   // handle on changing input in the filters
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -551,6 +544,7 @@ const CreateComponents = ({ specsJson }) => {
     // handle and get the data by the inserted value
     const endpoint = serviceEndpointsWithGetOption[currentInputIndex];
     //TODO: problem when typing id in "store"
+
     switch (endpoint[1].get.parameters[0].in) {
       case "query":
         callApi(`${baseApiUrl}${endpoint[0]}?${name}=${value}`);
@@ -637,6 +631,25 @@ const CreateComponents = ({ specsJson }) => {
   }
   //end here
 
+  if (methodName) {
+    if (methodName === "get") {
+      displayPostOptionsArray = null;
+      isPutInService = null;
+      isDeleteInService = null;
+    } else if (methodName === "post") {
+      serviceEndpointsWithGetOption = null;
+      isPutInService = null;
+      isDeleteInService = null;
+      displayFiltersArray = null;
+    } else if (methodName === "put") {
+      displayPostOptionsArray = null;
+      isDeleteInService = null;
+    } else {
+      // method = delete
+      displayPostOptionsArray = null;
+      isPutInService = null;
+    }
+  }
   React.useEffect(
     () => setDisplayFilters(displayFiltersArray),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -649,6 +662,7 @@ const CreateComponents = ({ specsJson }) => {
     tableDataArray,
     displayPostOptionsArray,
     formInModal,
+    errors,
   };
 
   const editDeleteButtons = {
@@ -656,28 +670,40 @@ const CreateComponents = ({ specsJson }) => {
     isDeleteInService,
   };
 
+  const mothedsData = {
+    methodName,
+    currentServiceEndpoints,
+  };
   return (
-    <GenerateView
-      appInfo={specsJson.info}
-      menuItems={services}
-      selectedMenuItemIndex={selectedDefinitionIndex}
+    <RenderUI
+      mothedsData={mothedsData}
       uiObject={uiObject}
+      currentService={currentPath}
       editDeleteButtons={editDeleteButtons}
       fetchResponse={{ data, error, loading }}
       onUiInputChange={handleInputChange}
-      onMenuItemClick={handleMenuItemClick}
       onPostOptionClicked={handlePostOptionClicked}
       onSubmit={handleSubmit(handleSubmitInModal)}
       onEditClicked={handleEditClicked}
-      onDeleteClicked={handleDeleteClicked}
+      onDeleteClicked={(id) => {
+        setDeleteObjectId(id);
+        setOpenDeletePopupDialog(true);
+      }}
       onTogglePopupDialog={() => setOpenPopupDialog((prevState) => !prevState)}
       openPopupDialog={openPopupDialog}
+      closeOpenDeletePopUpDialog={() =>
+        setOpenDeletePopupDialog((prevState) => !prevState)
+      }
+      openDeletePopupDialog={openDeletePopupDialog}
+      onDeleteConfirmed={() => handleDeleteClicked(deleteObjectId)}
     />
   );
 };
 
-CreateComponents.propTypes = {
+MainComponent.propTypes = {
+  serviceName: PropTypes.string.isRequired,
+  methodName: PropTypes.string,
   specsJson: PropTypes.object.isRequired,
 };
 
-export default CreateComponents;
+export default MainComponent;

@@ -2,10 +2,10 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Button, Modal } from "react-bootstrap";
 
-const PopupDialog = ({ open, onClose, onSaveClicked, children }) => (
+const PopupDialog = ({ open, onClose, onSaveClicked, title, children }) => (
   <Modal show={open} onHide={onClose}>
     <Modal.Header closeButton>
-      <Modal.Title>Add/Update</Modal.Title>
+      <Modal.Title>{title}</Modal.Title>
     </Modal.Header>
     <Modal.Body>{children}</Modal.Body>
     <Modal.Footer>
@@ -21,6 +21,7 @@ PopupDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSaveClicked: PropTypes.func.isRequired,
+  title: PropTypes.string,
   children: PropTypes.object,
 };
 

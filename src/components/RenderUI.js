@@ -2,7 +2,6 @@ import React, { Fragment } from "react";
 import PropTypes from "prop-types";
 import { Button, Form, Table, Badge } from "react-bootstrap";
 
-import NavBar from "./shared/NavBar";
 import TextField from "./shared/TextField";
 import DropDownField from "./shared/DropDownField";
 import PopupDialog from "./shared/PopupDialog";
@@ -10,23 +9,24 @@ import { ToastContainer } from "react-toastify";
 
 import { capitalize, getObjectType } from "../utils";
 
-import "./GenerateView.css";
+import "./RenderUI.css";
 
-const GenerateView = ({
-  appInfo,
-  menuItems,
-  selectedMenuItemIndex,
+const RenderUI = ({
+  mothedsData,
   uiObject,
   fetchResponse,
   onUiInputChange,
   editDeleteButtons,
-  onMenuItemClick,
+  currentService,
   onPostOptionClicked,
   onSubmit,
   onEditClicked,
   onDeleteClicked,
   onTogglePopupDialog,
+  onDeleteConfirmed,
   openPopupDialog,
+  closeOpenDeletePopUpDialog,
+  openDeletePopupDialog,
 }) => {
   const { data, loading, error } = fetchResponse;
   const {
@@ -35,10 +35,11 @@ const GenerateView = ({
     tableDataArray,
     displayPostOptionsArray,
     formInModal,
+    errors,
   } = uiObject;
-
   const { isPutInService, isDeleteInService } = editDeleteButtons;
-  const currentService = menuItems[selectedMenuItemIndex];
+
+  const { methodName, currentServiceEndpoints } = mothedsData;
 
   const displayPostButtons = displayPostOptionsArray?.map((opt, index) => (
     <Button
@@ -103,42 +104,50 @@ const GenerateView = ({
               return <td key={`${c}_${idx}`}>{r[c]}</td>;
           }
         })}
-        <td className="actions-buttons-wrapper">
-          {isPutInService.length > 0 ? (
-            <Button variant="warning" onClick={() => onEditClicked(idx)}>
-              Edit
-            </Button>
-          ) : null}
-          {isDeleteInService.length > 0 ? (
-            <Button variant="danger" onClick={() => onDeleteClicked(idx)}>
-              Delete
-            </Button>
-          ) : null}
-        </td>
+        {(isPutInService?.length > 0 || isDeleteInService?.length > 0) && (
+          <td className="actions-buttons-wrapper">
+            {isPutInService?.length > 0 && (
+              <Button variant="warning" onClick={() => onEditClicked(idx)}>
+                Edit
+              </Button>
+            )}
+            {isDeleteInService?.length > 0 && (
+              <Button variant="danger" onClick={() => onDeleteClicked(idx)}>
+                Delete
+              </Button>
+            )}
+          </td>
+        )}
       </tr>
     </Fragment>
   ));
+
   return (
     <Fragment>
       <PopupDialog
         open={openPopupDialog}
         onClose={onTogglePopupDialog}
         onSaveClicked={onSubmit}
+        title={currentService}
       >
-        <Form>{formInModal}</Form>
+        <Form>
+          {formInModal}
+          {Object.keys(errors).length > 0 && (
+            <p style={{ color: "red" }}>Please fill all fields correctly</p>
+          )}
+        </Form>
       </PopupDialog>
-      <div className="generated-app-header">
-        <h3>{appInfo.title}</h3>
-        <p>Version {appInfo.version}</p>
-      </div>
-      <NavBar
-        menuItems={menuItems}
-        selectedIndex={selectedMenuItemIndex}
-        onItemClick={(selectedIndex) => onMenuItemClick(selectedIndex)}
-      />
+      <PopupDialog
+        open={openDeletePopupDialog}
+        onClose={closeOpenDeletePopUpDialog}
+        onSaveClicked={onDeleteConfirmed}
+        title={"Delete"}
+      >
+        <Form>{"Are you sure you want to delete this item?"}</Form>
+      </PopupDialog>
+      <ToastContainer autoClose={3000} />
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
-        <ToastContainer autoClose={3000} />
         <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (
           <div>Loading...</div>
@@ -156,37 +165,44 @@ const GenerateView = ({
                   {tableColumns.map((column) => (
                     <th key={column}>{capitalize(column)}</th>
                   ))}
-                  <th key="action">Actions</th>
+                  {(isPutInService?.length > 0 ||
+                    isDeleteInService?.length > 0) && (
+                    <th key="action">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>{tableData}</tbody>
             </Table>
           </Fragment>
-        ) : (
-          <p>
-            <i>No records to show</i>
-          </p>
-        )}
+        ) : (methodName && methodName === "get") ||
+          (currentServiceEndpoints && currentServiceEndpoints[0][1].get) ? (
+          !tableData || tableData.length === 0 ? (
+            <p>
+              <i>No records to show</i>
+            </p>
+          ) : null
+        ) : null}
       </div>
     </Fragment>
   );
 };
 
-GenerateView.propTypes = {
-  appInfo: PropTypes.object.isRequired,
-  menuItems: PropTypes.array.isRequired,
-  selectedMenuItemIndex: PropTypes.number.isRequired,
+RenderUI.propTypes = {
+  currentService: PropTypes.string.isRequired,
+  mothedsData: PropTypes.object.isRequired,
   openPopupDialog: PropTypes.bool.isRequired,
+  openDeletePopupDialog: PropTypes.bool.isRequired,
   uiObject: PropTypes.object.isRequired,
   editDeleteButtons: PropTypes.object.isRequired,
   fetchResponse: PropTypes.object.isRequired,
   onUiInputChange: PropTypes.func.isRequired,
-  onMenuItemClick: PropTypes.func.isRequired,
   onPostOptionClicked: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onEditClicked: PropTypes.func.isRequired,
   onDeleteClicked: PropTypes.func.isRequired,
   onTogglePopupDialog: PropTypes.func.isRequired,
+  closeOpenDeletePopUpDialog: PropTypes.func.isRequired,
+  onDeleteConfirmed: PropTypes.func.isRequired,
 };
 
-export default GenerateView;
+export default RenderUI;
