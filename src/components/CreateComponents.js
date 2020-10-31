@@ -18,9 +18,14 @@ const CreateComponents = ({ specsJson }) => {
   //displays fields in modal due to the option which has clicked to post
   const [formInModal, setFormInModal] = useState();
   // handle forms values using react-hook-form
-  const { register, handleSubmit } = useForm();
+  const { register, errors, handleSubmit } = useForm();
   // control the Modal to be displayed
   const [openPopupDialog, setOpenPopupDialog] = useState(false);
+  // control to popup of the delete confirmation
+  const [openDeletePopupDialog, setOpenDeletePopupDialog] = useState(false);
+  // save the index of the item to delete
+  const [deleteObjectId, setDeleteObjectId] = useState(-1);
+
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
   // contain the samples data as the rows of the table
@@ -472,6 +477,8 @@ const CreateComponents = ({ specsJson }) => {
     const endIndex = reqPath.indexOf("}");
     const identifierTerm = reqPath.substring(startIndex + 1, endIndex);
 
+    setOpenDeletePopupDialog(false);
+
     const reqPathToSend = reqPath.replace("{" + identifierTerm + "}", idValue);
     callApi(`${baseApiUrl}${reqPathToSend}`, { method: "DELETE" }).then(() => {
       notifyDelete();
@@ -649,6 +656,7 @@ const CreateComponents = ({ specsJson }) => {
     tableDataArray,
     displayPostOptionsArray,
     formInModal,
+    errors,
   };
 
   const editDeleteButtons = {
@@ -669,7 +677,15 @@ const CreateComponents = ({ specsJson }) => {
       onPostOptionClicked={handlePostOptionClicked}
       onSubmit={handleSubmit(handleSubmitInModal)}
       onEditClicked={handleEditClicked}
-      onDeleteClicked={handleDeleteClicked}
+      onDeleteClicked={(id) => {
+        setDeleteObjectId(id);
+        setOpenDeletePopupDialog(true);
+      }}
+      closeOpenDeletePopUpDialog={() =>
+        setOpenDeletePopupDialog((prevState) => !prevState)
+      }
+      openDeletePopupDialog={openDeletePopupDialog}
+      onDeleteConfirmed={() => handleDeleteClicked(deleteObjectId)}
       onTogglePopupDialog={() => setOpenPopupDialog((prevState) => !prevState)}
       openPopupDialog={openPopupDialog}
     />

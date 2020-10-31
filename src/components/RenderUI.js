@@ -121,7 +121,6 @@ const RenderUI = ({
       </tr>
     </Fragment>
   ));
-
   return (
     <Fragment>
       <PopupDialog

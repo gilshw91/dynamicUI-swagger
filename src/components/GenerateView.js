@@ -27,6 +27,9 @@ const GenerateView = ({
   onDeleteClicked,
   onTogglePopupDialog,
   openPopupDialog,
+  onDeleteConfirmed,
+  closeOpenDeletePopUpDialog,
+  openDeletePopupDialog,
 }) => {
   const { data, loading, error } = fetchResponse;
   const {
@@ -35,6 +38,7 @@ const GenerateView = ({
     tableDataArray,
     displayPostOptionsArray,
     formInModal,
+    errors,
   } = uiObject;
 
   const { isPutInService, isDeleteInService } = editDeleteButtons;
@@ -124,9 +128,33 @@ const GenerateView = ({
         open={openPopupDialog}
         onClose={onTogglePopupDialog}
         onSaveClicked={onSubmit}
+        title={currentService}
       >
-        <Form>{formInModal}</Form>
+        <Form>
+          {formInModal}
+          {errors && Object.keys(errors).length > 0 && (
+            <>
+              <p style={{ color: "red" }}>The following fields are required:</p>
+              <ul>
+                {Object.keys(errors).map((e) => (
+                  <li key={e} style={{ color: "red" }}>
+                    {capitalize(e)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </Form>
       </PopupDialog>
+      <PopupDialog
+        open={openDeletePopupDialog}
+        onClose={closeOpenDeletePopUpDialog}
+        onSaveClicked={onDeleteConfirmed}
+        title={"Delete"}
+      >
+        <Form>{"Are you sure you want to delete this item?"}</Form>
+      </PopupDialog>
+      <ToastContainer autoClose={3000} />
       <div className="generated-app-header">
         <h3>{appInfo.title}</h3>
         <p>Version {appInfo.version}</p>
@@ -138,7 +166,7 @@ const GenerateView = ({
       />
       <div className="container p-4">
         <div className="post-buttons-wrapper">{displayPostButtons}</div>
-        <ToastContainer autoClose={3000} />
+
         <Form className="row">{displayFiltersInputs}</Form>
         {loading ? (
           <div>Loading...</div>
@@ -177,6 +205,7 @@ GenerateView.propTypes = {
   menuItems: PropTypes.array.isRequired,
   selectedMenuItemIndex: PropTypes.number.isRequired,
   openPopupDialog: PropTypes.bool.isRequired,
+  openDeletePopupDialog: PropTypes.bool.isRequired,
   uiObject: PropTypes.object.isRequired,
   editDeleteButtons: PropTypes.object.isRequired,
   fetchResponse: PropTypes.object.isRequired,
@@ -187,6 +216,8 @@ GenerateView.propTypes = {
   onEditClicked: PropTypes.func.isRequired,
   onDeleteClicked: PropTypes.func.isRequired,
   onTogglePopupDialog: PropTypes.func.isRequired,
+  closeOpenDeletePopUpDialog: PropTypes.func.isRequired,
+  onDeleteConfirmed: PropTypes.func.isRequired,
 };
 
 export default GenerateView;

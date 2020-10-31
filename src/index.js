@@ -9,10 +9,6 @@ import "./index.css";
 
 ReactDOM.render(
   <App />,
-  // <MainComponent
-  //   serviceName="pet$findByStatus"
-  //   methodName="get"
-  //   specsJson={openApiJson}
-  // />,
+  // <MainComponent serviceName="pet" methodName="" specsJson={openApiJson} />,
   document.getElementById("root")
 );

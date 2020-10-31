@@ -17,9 +17,11 @@ const MainComponent = ({ serviceName, methodName, specsJson }) => {
   const [formInModal, setFormInModal] = useState();
   // handle forms values using react-hook-form
   const { register, errors, handleSubmit } = useForm();
-  // control the Modal to be displayed
+  // control the popup dialog to be displayed
   const [openPopupDialog, setOpenPopupDialog] = useState(false);
+  // control to popup of the delete confirmation
   const [openDeletePopupDialog, setOpenDeletePopupDialog] = useState(false);
+  // save the index of the item to delete
   const [deleteObjectId, setDeleteObjectId] = useState(-1);
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
@@ -143,19 +145,23 @@ const MainComponent = ({ serviceName, methodName, specsJson }) => {
             case "array": {
               if (fullRef.properties[field].items.type) {
                 inputUiInModal = (
-                  <Form.Control
-                    type={
-                      fullRef.properties[field].items.type === "integer"
-                        ? "number"
-                        : "text"
-                    } // TODO: another switch
-                    name={field + "[0]"} // This cast the value to "array"
-                    placeholder={"Please separate by comma"}
-                    ref={register({
-                      required: "Required",
-                    })}
-                    defaultValue={initialValues[field]}
-                  />
+                  <>
+                    <Form.Control
+                      type={
+                        fullRef.properties[field].items.type === "integer"
+                          ? "number"
+                          : "text"
+                      } // TODO: another switch
+                      name={field + "[0]"} // This cast the value to "array"
+                      placeholder={"Please separate by comma"}
+                      ref={register({
+                        required: "Required",
+                      })}
+                      defaultValue={initialValues[field]}
+                    />
+                    {setFieldsErrors(errors[field])}
+                    {errors[field] && errors[field].message}
+                  </>
                 );
               } else {
                 tempRef = fullRef.properties[field].items.$ref
@@ -202,6 +208,8 @@ const MainComponent = ({ serviceName, methodName, specsJson }) => {
                         );
                       }
                     )}
+                    {console.log("err1:", errors)}
+                    {errors.field && <p>"Your input is required"</p>}
                   </Form.Group>
                 );
               }
@@ -223,30 +231,36 @@ const MainComponent = ({ serviceName, methodName, specsJson }) => {
                 });
               } else {
                 inputUiInModal = (
-                  <Form.Control
-                    type="text"
-                    name={field}
-                    placeholder={"Please enter " + capitalize(field)}
-                    ref={register({
-                      required: "Required",
-                    })}
-                    defaultValue={initialValues[field]}
-                  />
+                  <>
+                    <Form.Control
+                      type="text"
+                      name={field}
+                      placeholder={"Please enter " + capitalize(field)}
+                      ref={register({
+                        required: "Required",
+                      })}
+                      defaultValue={initialValues[field]}
+                    />
+                    {errors[field] && errors[field].message}
+                  </>
                 );
               }
 
               break;
             case "integer":
               inputUiInModal = (
-                <Form.Control
-                  type="number"
-                  name={field}
-                  placeholder={"Please enter " + capitalize(field)}
-                  defaultValue={initialValues[field]}
-                  ref={register({
-                    required: "Required",
-                  })}
-                />
+                <>
+                  <Form.Control
+                    type="number"
+                    name={field}
+                    placeholder={"Please enter " + capitalize(field)}
+                    defaultValue={initialValues[field]}
+                    ref={register({
+                      required: "Required",
+                    })}
+                  />
+                  {errors.field && <p>"Your input is required"</p>}
+                </>
               );
               break;
             case "file":
@@ -397,14 +411,18 @@ const MainComponent = ({ serviceName, methodName, specsJson }) => {
               break;
             case "integer":
               inputUiInModal = (
-                <Form.Control
-                  type="number"
-                  name={field.name}
-                  placeholder={"Please enter " + capitalize(field.name)}
-                  ref={register({
-                    required: "Required",
-                  })}
-                />
+                <>
+                  <Form.Control
+                    type="number"
+                    name={field.name}
+                    placeholder={"Please enter " + capitalize(field.name)}
+                    ref={register({
+                      required: true,
+                    })}
+                  />
+                  {console.log("err", errors)}
+                  {errors[field.name] && <p>"Your input is required"</p>}
+                </>
               );
               break;
             case "file":
@@ -674,6 +692,8 @@ const MainComponent = ({ serviceName, methodName, specsJson }) => {
     methodName,
     currentServiceEndpoints,
   };
+
+  console.log("errors2", errors);
   return (
     <RenderUI
       mothedsData={mothedsData}
