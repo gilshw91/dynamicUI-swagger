@@ -47,12 +47,10 @@ const GenerateView = ({
 
   const displayPostButtons = displayPostOptionsArray?.map((opt, index) => (
     <Button
-      key={opt}
-      onClick={() => {
-        onPostOptionClicked(index);
-      }}
+      key={opt.operation}
+      onClick={() => onPostOptionClicked(index, opt.path)}
     >
-      {capitalize(opt)}
+      {capitalize(opt.operation)}
     </Button>
   ));
   const displayFiltersInputs = displayFilters?.map((f, index) => {

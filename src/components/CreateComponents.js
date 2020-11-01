@@ -25,6 +25,8 @@ const CreateComponents = ({ specsJson }) => {
   const [openDeletePopupDialog, setOpenDeletePopupDialog] = useState(false);
   // save the index of the item to delete
   const [deleteObjectId, setDeleteObjectId] = useState(-1);
+  // store the current post action button the user has clicked on
+  const [currentActionClicked, setCurrentActionClicked] = useState("");
 
   // contain the properties of the displayed definition that will be display as the coloumns of the table
   let tableColumns = [];
@@ -501,23 +503,61 @@ const CreateComponents = ({ specsJson }) => {
   };
 
   const handleSubmitInModal = (data) => {
-    callApi(`${baseApiUrl}/${currentService.toLowerCase()}`, {
+    let reqVal = currentActionClicked.substring(1);
+    if (reqVal.includes("{") && reqVal.includes("}")) {
+      const startIndex = reqVal.indexOf("{") + 1;
+      const endIndex = reqVal.indexOf("}");
+      const parameterName = reqVal.substring(startIndex, endIndex);
+      reqVal = reqVal
+        .replace("{", "")
+        .replace("}", "")
+        .replace(parameterName, data[parameterName]);
+    }
+
+    const currentEndpointIndex = serviceEndpointsWithPostOption.findIndex(
+      (path) => path[0] === currentActionClicked
+    );
+
+    const endpoint = serviceEndpointsWithPostOption[currentEndpointIndex];
+
+    let contentType = "";
+    let reqBody = "";
+
+    switch (endpoint[1].post.consumes[0]) {
+      case "application/x-www-form-urlencoded":
+        contentType = "application/x-www-form-urlencoded";
+
+        const params = [];
+        Object.keys(data).forEach((property) => {
+          var encodedKey = encodeURIComponent(property);
+          var encodedValue = encodeURIComponent(data[property]);
+          params.push(encodedKey + "=" + encodedValue);
+        });
+
+        reqBody = params.join("&");
+        break;
+
+      default:
+        contentType = "application/json";
+        reqBody = JSON.stringify(data);
+    }
+
+    callApi(`${baseApiUrl}/${reqVal.toLowerCase()}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
+        "Content-Type": contentType,
       },
-      body: JSON.stringify(data),
+      body: reqBody,
     }).then(() => {
       setOpenPopupDialog((prevState) => !prevState);
       notifySubmit();
-      console.log("post completed");
     });
   };
 
-  // TODO: be able to change the title of the modal
-  const handlePostOptionClicked = (indexOfOption) => {
+  const handlePostOptionClicked = (indexOfOption, path) => {
     const optionData = serviceEndpointsWithPostOption[indexOfOption];
+    setCurrentActionClicked(path);
     extractFieldsFromDefinitions(optionData);
   };
 
@@ -621,10 +661,8 @@ const CreateComponents = ({ specsJson }) => {
   let displayPostOptionsArray = [];
 
   serviceEndpointsWithPostOption.forEach((ep) => {
-    displayPostOptionsArray = [
-      ...displayPostOptionsArray,
-      ep[1].post.operationId,
-    ];
+    const postDetails = { path: ep[0], operation: ep[1].post.operationId };
+    displayPostOptionsArray = [...displayPostOptionsArray, postDetails];
   });
 
   // assigning items into array
