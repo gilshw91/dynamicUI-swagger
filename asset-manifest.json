@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/dynamicUI-swagger/static/css/main.bb1ef5e4.chunk.css",
+    "main.js": "/dynamicUI-swagger/static/js/main.0252be2a.chunk.js",
+    "main.js.map": "/dynamicUI-swagger/static/js/main.0252be2a.chunk.js.map",
+    "runtime-main.js": "/dynamicUI-swagger/static/js/runtime-main.e62e5163.js",
+    "runtime-main.js.map": "/dynamicUI-swagger/static/js/runtime-main.e62e5163.js.map",
+    "static/css/2.19e10c4f.chunk.css": "/dynamicUI-swagger/static/css/2.19e10c4f.chunk.css",
+    "static/js/2.812c8c47.chunk.js": "/dynamicUI-swagger/static/js/2.812c8c47.chunk.js",
+    "static/js/2.812c8c47.chunk.js.map": "/dynamicUI-swagger/static/js/2.812c8c47.chunk.js.map",
+    "index.html": "/dynamicUI-swagger/index.html",
+    "precache-manifest.d22f92bed9730931367b050e62281a38.js": "/dynamicUI-swagger/precache-manifest.d22f92bed9730931367b050e62281a38.js",
+    "service-worker.js": "/dynamicUI-swagger/service-worker.js",
+    "static/css/2.19e10c4f.chunk.css.map": "/dynamicUI-swagger/static/css/2.19e10c4f.chunk.css.map",
+    "static/css/main.bb1ef5e4.chunk.css.map": "/dynamicUI-swagger/static/css/main.bb1ef5e4.chunk.css.map",
+    "static/js/2.812c8c47.chunk.js.LICENSE.txt": "/dynamicUI-swagger/static/js/2.812c8c47.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.e62e5163.js",
+    "static/css/2.19e10c4f.chunk.css",
+    "static/js/2.812c8c47.chunk.js",
+    "static/css/main.bb1ef5e4.chunk.css",
+    "static/js/main.0252be2a.chunk.js"
+  ]
+}
