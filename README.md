@@ -1,3 +1,9 @@
+## DYNAMIC UI CONFIGURATION SYSTEM
+A React web application that accepts OpenApi (swagger) contract and generates a scaffold UI based on its structure.
+
+## Live Demo: 
+https://gilshw91.github.io/dynamicUI-swagger/
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
